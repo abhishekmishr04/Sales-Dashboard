@@ -18,9 +18,6 @@
         .topbar h1{font-size:1rem;font-weight:700;letter-spacing:.3px;margin:0}
         .logo-dot{width:9px;height:9px;background:#38bdf8;border-radius:50%;display:inline-block;
           margin-right:8px;box-shadow:0 0 6px #38bdf8}
-        .nav-tab{background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.82rem;font-weight:600;
-          padding:6px 14px;border-radius:8px;transition:.2s}
-        .nav-tab.active,.nav-tab:hover{background:#eff6ff;color:var(--acc)}
 
         /* UPLOAD ZONE */
         .upload-zone{border:2.5px dashed #93c5fd;background:#fff;border-radius:16px;padding:44px 24px;
@@ -34,6 +31,16 @@
         /* FILTER BAR */
         .fbar{background:#fff;border-radius:12px;padding:10px 16px;
           box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+        /* DAY NAV */
+        .day-nav{display:flex;align-items:center;gap:4px;background:#f8fafc;
+          border:1.5px solid #e2e8f0;border-radius:8px;padding:2px 6px}
+        .day-nav-btn{background:none;border:none;cursor:pointer;width:26px;height:26px;
+          border-radius:6px;display:flex;align-items:center;justify-content:center;
+          color:#64748b;font-size:1rem;font-weight:700;transition:.15s;line-height:1}
+        .day-nav-btn:hover:not(:disabled){background:#e2e8f0;color:#1e3a5f}
+        .day-nav-btn:disabled{opacity:.35;cursor:default}
+        .day-nav-label{font-size:.82rem;font-weight:800;color:#1e3a5f;min-width:52px;text-align:center;white-space:nowrap}
 
         /* REPORT STYLES */
         .rpt-wrap{background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.12);overflow:hidden}
@@ -65,6 +72,23 @@
           padding:10px 16px;font-size:.85rem;font-family:inherit;outline:none;color:#92400e;font-weight:600}
         .spend-inp::placeholder{color:#d97706;opacity:.6;font-style:italic;font-size:.75rem}
         .spend-inp:focus{background:#fef9c3;color:#78350f}
+
+        /* ENTER DATA CELLS — for portals with 0 sales */
+        .enter-data-cell{background:#f0f9ff!important;padding:0!important;position:relative}
+        .enter-data-inp{border:none;background:transparent;width:100%;min-width:110px;text-align:right;
+          padding:10px 16px;font-size:.85rem;font-family:inherit;outline:none;
+          color:#0369a1;font-weight:700;cursor:text}
+        .enter-data-inp::placeholder{color:#7dd3fc;opacity:1;font-style:italic;font-size:.74rem;font-weight:600}
+        .enter-data-inp:focus{background:#e0f2fe;color:#0c4a6e}
+
+        /* ENTER DATA CELLS for Last Month (green shade) */
+        .enter-data-lm-cell{background:#f0fdf4!important;padding:0!important;position:relative}
+        .enter-data-lm-inp{border:none;background:transparent;width:100%;min-width:110px;text-align:right;
+          padding:10px 16px;font-size:.85rem;font-family:inherit;outline:none;
+          color:#166534;font-weight:700;cursor:text}
+        .enter-data-lm-inp::placeholder{color:#86efac;opacity:1;font-style:italic;font-size:.74rem;font-weight:600}
+        .enter-data-lm-inp:focus{background:#dcfce7;color:#14532d}
+
         .prev-s-cell{background:#f0fdf4;font-weight:600;color:#166534}
         .prev-sp-cell{background:#fffbeb;padding:0!important}
         .rpt-total td{background:#f1f5f9;font-weight:800;font-size:.87rem;
@@ -82,7 +106,6 @@
         /* STATUS BADGE */
         .status-badge{display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#166534;
           border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:700}
-        .status-badge.warn{background:#fef3c7;color:#92400e}
 
         /* SUMMARY CARDS */
         .rpt-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
@@ -117,7 +140,7 @@
         .d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}
 
         input:focus{box-shadow:inset 0 0 0 2px rgba(234,179,8,.4)}
-        .view{display:none}.view.active{display:block}
+        .enter-data-inp:focus,.enter-data-lm-inp:focus{box-shadow:inset 0 0 0 2px rgba(14,165,233,.35)}
 
         @media print{
           .no-print{display:none!important}
@@ -125,7 +148,7 @@
           .topbar{position:relative;box-shadow:none}
           .rpt-wrap{box-shadow:none;border:1px solid #d1d5db}
           .rpt-table{font-size:9pt}
-          .spend-inp{color:#000;font-size:9pt}
+          .spend-inp,.enter-data-inp,.enter-data-lm-inp{color:#000;font-size:9pt}
           .fbar,.rpt-summary,.legend-bar .no-print{display:none!important}
         }
 
@@ -180,9 +203,19 @@
 
         <div class="d-flex align-items-center gap-1">
             <span class="small text-muted fw-semibold">Brand</span>
-            <select id="rBrand" class="form-select form-select-sm" style="width:220px" onchange="generateReport()">
+            <select id="rBrand" class="form-select form-select-sm" style="width:200px" onchange="generateReport()">
                 <option value="">— Select Brand —</option>
             </select>
+        </div>
+
+        <!-- DAY BROWSER — prev / label / next -->
+        <div class="d-flex align-items-center gap-1">
+            <span class="small text-muted fw-semibold">Day</span>
+            <div class="day-nav">
+                <button class="day-nav-btn" id="btnPrevDay" onclick="changeDay(-1)" title="Previous day" disabled>‹</button>
+                <span class="day-nav-label" id="dayNavLabel">—</span>
+                <button class="day-nav-btn" id="btnNextDay" onclick="changeDay(1)" title="Next day" disabled>›</button>
+            </div>
         </div>
 
         <div class="d-flex align-items-center gap-1">
@@ -209,8 +242,8 @@
         </button>
 
         <span class="status-badge ms-auto" id="statusBadge">
-      <i class="fas fa-check-circle me-1"></i>Auto-generated from DSR
-    </span>
+            <i class="fas fa-check-circle me-1"></i>Auto-generated from DSR
+        </span>
     </div>
 
     <!-- SUMMARY KPI CARDS -->
@@ -223,7 +256,8 @@
             <i class="fas fa-info-circle me-1"></i>
             Sales values auto-filled from DSR &nbsp;&nbsp;
             <span style="background:#fde68a;padding:1px 6px;border-radius:4px">Yellow = Ads Spend</span> — type manually &nbsp;&nbsp;
-            <span style="background:#bbf7d0;padding:1px 6px;border-radius:4px">Green = Last Month Sales</span> — auto-filled &amp; editable
+            <span style="background:#bbf7d0;padding:1px 6px;border-radius:4px">Green = Last Month Sales</span> — auto-filled &amp; editable &nbsp;&nbsp;
+            <span style="background:#bae6fd;padding:1px 6px;border-radius:4px">Blue = No DSR data</span> — enter manually
         </div>
 
         <div class="table-responsive">
@@ -256,9 +290,10 @@
             <span><span class="leg-dot" style="background:#f1f5f9;border:1px solid #d1d5db"></span>Auto from DSR</span>
             <span><span class="leg-dot" style="background:#fffbeb;border:1px solid #f59e0b"></span>Ads Spend — enter manually</span>
             <span><span class="leg-dot" style="background:#f0fdf4;border:1px solid #22c55e"></span>Last Month Sales — auto-filled &amp; editable</span>
+            <span><span class="leg-dot" style="background:#e0f2fe;border:1px solid #38bdf8"></span>No DSR data — enter manually</span>
             <span class="ms-auto text-muted no-print">
-        <i class="fas fa-keyboard me-1"></i>Click any yellow cell to type spend
-      </span>
+                <i class="fas fa-keyboard me-1"></i>Click any yellow or blue cell to type
+            </span>
         </div>
     </div>
 
@@ -266,8 +301,7 @@
         <div class="alert border-0 py-2 px-3"
              style="background:#eff6ff;border-left:4px solid #3b82f6!important;border-radius:10px">
             <i class="fas fa-lightbulb me-2 text-primary"></i>
-            <strong>Tip:</strong> After filling Ads Spend manually, click <strong>Export Excel</strong> to download
-            the complete report, or <strong>Print</strong> for a clean printout.
+            <strong>Tip:</strong> Use the <strong>‹ ›</strong> arrows to browse any previous day. Blue cells indicate no data in DSR — type to fill manually. After filling Ads Spend, click <strong>Export Excel</strong> or <strong>Print</strong>.
         </div>
     </div>
 </div>
@@ -276,450 +310,560 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ════════════════════════════════════════════════════════════
-    // CONSTANTS — exact column map for DSR format
-    // ════════════════════════════════════════════════════════════
-    const C_RESP=1, C_PORTAL=2, C_SELLER=3, C_BRAND=4;
-    const C_TGT=9, C_CM=11, C_MTD_TGT=13, C_LM=19;
-    const C_STGT=21, C_SPEND=22;
+// ════════════════════════════════════════════════════════════
+// CONSTANTS — exact column map for DSR format
+// ════════════════════════════════════════════════════════════
+const C_RESP=1, C_PORTAL=2, C_SELLER=3, C_BRAND=4;
+const C_TGT=9, C_CM=11, C_MTD_TGT=13, C_LM=19;
+const C_STGT=21, C_SPEND=22;
 
-    // Day → column index (same structure every DSR file)
-    const DAY_COLS = [
-      25,26,27,28,29,30,31,         // W1: days 1–7
-      37,38,39,40,41,42,43,         // W2: days 8–14
-      50,51,52,53,54,55,56,         // W3: days 15–21
-      63,64,65,66,67,68,69,         // W4: days 22–28
-      76,77,78                      // W5: days 29–31
-    ];
+// Day → column index (same structure every DSR file)
+const DAY_COLS = [
+  25,26,27,28,29,30,31,        // W1: days 1–7
+  37,38,39,40,41,42,43,        // W2: days 8–14
+  50,51,52,53,54,55,56,        // W3: days 15–21
+  63,64,65,66,67,68,69,        // W4: days 22–28
+  76,77,78                     // W5: days 29–31
+];
 
-    // Portal CSS class mapping
-    const PORTAL_CSS = {
-      'Flipkart':'pb-fk','Shopsy':'pb-fk',
-      'Amazon 3P':'pb-az','Amazon B2B':'pb-az','Amazon':'pb-az','Amazon UAE':'pb-az',
-      'Meesho':'pb-ms','Myntra':'pb-mn',
-      'Zepto':'pb-zt','Blinkit':'pb-az',
-      'Jio Mart':'pb-oth','Jio Mart ':'pb-oth','Alpha':'pb-oth'
-    };
+// Portal CSS class mapping
+const PORTAL_CSS = {
+  'Flipkart':'pb-fk','Shopsy':'pb-fk',
+  'Amazon 3P':'pb-az','Amazon B2B':'pb-az','Amazon':'pb-az','Amazon UAE':'pb-az',
+  'Meesho':'pb-ms','Myntra':'pb-mn',
+  'Zepto':'pb-zt','Blinkit':'pb-az',
+  'Jio Mart':'pb-oth','Jio Mart ':'pb-oth','Alpha':'pb-oth'
+};
 
-    // ════════════════════════════════════════════════════════════
-    // STATE
-    // ════════════════════════════════════════════════════════════
-    let PARSED_DATA    = {};   // { sellerName: { portals: [...], totals: {...} } }
-    let DAYS_ELAPSED   = 1;
-    let DAYS_TOTAL     = 31;
-    let MONTH_LABEL    = '';
-    let LAST_MONTH_LBL = '';
-    let CURRENT_FILE   = '';
+// ════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════
+let PARSED_DATA  = {};
+let DAYS_ELAPSED = 1;
+let SELECTED_DAY = 1;   // ← currently viewed day (can be ≤ DAYS_ELAPSED)
+let DAYS_TOTAL   = 31;
+let MONTH_LABEL  = '';
+let LAST_MONTH_LBL = '';
+let CURRENT_FILE = '';
 
-    // ════════════════════════════════════════════════════════════
-    // DRAG & DROP
-    // ════════════════════════════════════════════════════════════
-    const dropZone = document.getElementById('dropZone');
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault(); dropZone.classList.remove('drag');
-      handleFile(e.dataTransfer.files[0]);
+// ════════════════════════════════════════════════════════════
+// DRAG & DROP
+// ════════════════════════════════════════════════════════════
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+// ════════════════════════════════════════════════════════════
+// FILE HANDLER
+// ════════════════════════════════════════════════════════════
+function handleFile(file) {
+  if (!file) return;
+  if (!/\.(xlsx|xls)$/i.test(file.name)) { toast('Please upload .xlsx or .xls file', 'err'); return; }
+  CURRENT_FILE = file.name;
+  document.getElementById('topFileName').textContent = file.name;
+  showLoading(true);
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type:'array', raw:true });
+      parseWorkbook(wb);
+    } catch(err) {
+      toast('Error: ' + err.message, 'err');
+      showLoading(false);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ════════════════════════════════════════════════════════════
+// PARSER — reads DSR sheet with exact column positions
+// ════════════════════════════════════════════════════════════
+function parseWorkbook(wb) {
+  const dsrName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'DSR');
+  if (!dsrName) { toast('No "DSR" sheet found!', 'err'); showLoading(false); return; }
+
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[dsrName], {
+    header:1, defval:null, raw:true
+  });
+
+  // Row 0 = SUM (totals), Row 3 = headers, Row 5+ = data
+  const sumRow = rows[0];
+  const hdrRow = rows[3];
+
+  // Days elapsed
+  DAYS_ELAPSED = Math.round(nv(sumRow[7])) || 1;
+  SELECTED_DAY = DAYS_ELAPSED;   // default view = most recent day
+  DAYS_TOTAL   = inferDaysInMonth(CURRENT_FILE);
+
+  // Month labels
+  const monthRaw  = String(hdrRow[9] || '').replace(/tgt|target/gi,'').trim();
+  MONTH_LABEL     = monthRaw || 'This Month';
+  LAST_MONTH_LBL  = prevMonth(MONTH_LABEL, CURRENT_FILE);
+
+  // Update label inputs
+  updateDayLabels();
+
+  // ── Parse data rows ──────────────────────────────────────
+  PARSED_DATA = {};
+
+  for (let i = 5; i < rows.length; i++) {
+    const row = rows[i];
+    const resp   = row[C_RESP];
+    const portal = row[C_PORTAL];
+    const seller = row[C_SELLER];
+
+    if (!resp || !seller) continue;
+    if (['SUM','SUBTOTAL',' ',''].includes(String(resp).trim())) continue;
+
+    const sk = String(seller).trim();
+    const pk = String(portal || '').trim();
+
+    const lm    = nv(row[C_LM]);
+    const stgt  = nv(row[C_STGT]);
+
+    if (!PARSED_DATA[sk]) {
+      PARSED_DATA[sk] = {
+        brand: sk,
+        resp: String(resp).trim(),
+        portals: {},
+        totals: { lm:0, stgt:0 }
+      };
+    }
+
+    const d = PARSED_DATA[sk];
+    if (!d.portals[pk]) {
+      d.portals[pk] = {
+        lm: 0,
+        stgt: 0,
+        dailySales: new Array(DAY_COLS.length).fill(0)
+      };
+    }
+
+    // Sum each day column
+    DAY_COLS.forEach((col, idx) => {
+      const v = (col < row.length) ? nv(row[col]) : 0;
+      d.portals[pk].dailySales[idx] += v;
     });
 
-    // ════════════════════════════════════════════════════════════
-    // FILE HANDLER
-    // ════════════════════════════════════════════════════════════
-    function handleFile(file) {
-      if (!file) return;
-      if (!/\.(xlsx|xls)$/i.test(file.name)) { toast('Please upload .xlsx or .xls file', 'err'); return; }
-      CURRENT_FILE = file.name;
-      document.getElementById('topFileName').textContent = file.name;
-      showLoading(true);
+    d.portals[pk].lm    += lm;
+    d.portals[pk].stgt  += stgt;
+    d.totals.lm    += lm;
+    d.totals.stgt  += stgt;
+  }
 
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          const wb = XLSX.read(e.target.result, { type:'array', raw:true });
-          parseWorkbook(wb);
-        } catch(err) {
-          toast('Error: ' + err.message, 'err');
-          showLoading(false);
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
+  // ── Populate brand dropdown — brand name only, no person ──
+  const sel = document.getElementById('rBrand');
+  sel.innerHTML = '<option value="">— Select Brand —</option>' +
+    Object.keys(PARSED_DATA).sort().map(s =>
+      `<option value="${s}">${s}</option>`   // ← no (Resp) suffix
+    ).join('');
 
-    // ════════════════════════════════════════════════════════════
-    // PARSER — reads DSR sheet with exact column positions
-    // ════════════════════════════════════════════════════════════
-    function parseWorkbook(wb) {
-      const dsrName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'DSR');
-      if (!dsrName) { toast('No "DSR" sheet found!', 'err'); showLoading(false); return; }
+  // Enable day nav buttons
+  document.getElementById('btnPrevDay').disabled = false;
+  document.getElementById('btnNextDay').disabled = false;
+  updateDayNavButtons();
 
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[dsrName], {
-        header:1, defval:null, raw:true
-      });
+  // Show report screen
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('reportScreen').style.display = '';
 
-      // Row 0 = SUM (totals), Row 3 = headers, Row 5+ = data
-      const sumRow = rows[0];
-      const hdrRow = rows[3];
+  showLoading(false);
+  toast(`Loaded ${Object.keys(PARSED_DATA).length} brands — select one to generate report`, 'ok');
+}
 
-      // Days elapsed & today column
-      DAYS_ELAPSED = Math.round(nv(sumRow[7])) || 1;
-      DAYS_TOTAL   = inferDaysInMonth(CURRENT_FILE);
-      const todayColIdx = DAY_COLS[DAYS_ELAPSED - 1];
+// ════════════════════════════════════════════════════════════
+// DAY NAVIGATION
+// ════════════════════════════════════════════════════════════
+function changeDay(delta) {
+  const newDay = SELECTED_DAY + delta;
+  if (newDay < 1 || newDay > DAYS_ELAPSED) return;
+  SELECTED_DAY = newDay;
+  updateDayLabels();
+  updateDayNavButtons();
+  if (document.getElementById('rBrand').value) generateReport();
+}
 
-      // Month labels from header col 9 e.g. "Feb TGT" → "Feb"
-      const monthRaw   = String(hdrRow[9] || '').replace(/tgt|target/gi,'').trim();
-      MONTH_LABEL      = monthRaw || 'This Month';
-      LAST_MONTH_LBL   = prevMonth(MONTH_LABEL, CURRENT_FILE);
+function updateDayLabels() {
+  document.getElementById('dayNavLabel').textContent = `Day ${SELECTED_DAY}`;
+  document.getElementById('rCol1').value = `${SELECTED_DAY} ${MONTH_LABEL}`;
+  document.getElementById('rCol2').value = `MTD ${MONTH_LABEL} (1–${SELECTED_DAY})`;
+  document.getElementById('rCol3').value = LAST_MONTH_LBL;
+}
 
-      // Update UI labels
-      document.getElementById('rCol1').value = `${DAYS_ELAPSED} ${MONTH_LABEL}`;
-      document.getElementById('rCol2').value = `MTD ${MONTH_LABEL} (1–${DAYS_ELAPSED})`;
-      document.getElementById('rCol3').value = LAST_MONTH_LBL;
+function updateDayNavButtons() {
+  document.getElementById('btnPrevDay').disabled = (SELECTED_DAY <= 1);
+  document.getElementById('btnNextDay').disabled = (SELECTED_DAY >= DAYS_ELAPSED);
+}
 
-      // ── Parse data rows ──────────────────────────────────────
-      PARSED_DATA = {};
+// ════════════════════════════════════════════════════════════
+// GENERATE REPORT
+// ════════════════════════════════════════════════════════════
+function generateReport() {
+  const sk = document.getElementById('rBrand').value;
+  if (!sk) return;
 
-      for (let i = 5; i < rows.length; i++) {
-        const row = rows[i];
-        const resp   = row[C_RESP];
-        const portal = row[C_PORTAL];
-        const seller = row[C_SELLER];
+  const c1 = document.getElementById('rCol1').value || 'Today';
+  const c2 = document.getElementById('rCol2').value || 'MTD';
+  const c3 = document.getElementById('rCol3').value || 'Last Month';
 
-        if (!resp || !seller) continue;
-        if (['SUM','SUBTOTAL',' ',''].includes(String(resp).trim())) continue;
+  document.getElementById('hdr1').textContent = c1;
+  document.getElementById('hdr2').textContent = c2;
+  document.getElementById('hdr3').textContent = c3;
 
-        const sk = String(seller).trim();
-        const pk = String(portal || '').trim();
+  const D = PARSED_DATA[sk];
+  if (!D) return;
 
-        const tgt   = nv(row[C_TGT]);
-        const cm    = nv(row[C_CM]);
-        const lm    = nv(row[C_LM]);
-        const stgt  = nv(row[C_STGT]);
-        const spend = (typeof row[C_SPEND] === 'number') ? nv(row[C_SPEND]) : 0;
-        const todayV = (todayColIdx < row.length) ? nv(row[todayColIdx]) : 0;
+  // Brand header — brand name ONLY, no person name
+  document.getElementById('rptBrandHeader').textContent = D.brand;
 
-        if (!PARSED_DATA[sk]) {
-          PARSED_DATA[sk] = {
-            brand: sk,
-            resp: String(resp).trim(),
-            portals: {},
-            totals: { today:0, mtd:0, lm:0, stgt:0, spend:0 }
-          };
-        }
+  buildTable(D, c1, c2, c3);
+  buildSummaryCards(D, c1, c2, c3);
 
-        const d = PARSED_DATA[sk];
-        if (!d.portals[pk]) d.portals[pk] = { today:0, mtd:0, lm:0, stgt:0, spend:0 };
+  document.getElementById('statusBadge').innerHTML =
+    `<i class="fas fa-check-circle me-1"></i>Report Generated`;
+}
 
-        d.portals[pk].today += todayV;
-        d.portals[pk].mtd   += cm;
-        d.portals[pk].lm    += lm;
-        d.portals[pk].stgt  += stgt;
-        d.portals[pk].spend += spend;
+// ════════════════════════════════════════════════════════════
+// BUILD TABLE — uses SELECTED_DAY for today/MTD computation
+// ════════════════════════════════════════════════════════════
+function buildTable(D, c1, c2, c3) {
+  const selDay = SELECTED_DAY;
 
-        d.totals.today += todayV;
-        d.totals.mtd   += cm;
-        d.totals.lm    += lm;
-        d.totals.stgt  += stgt;
-        d.totals.spend += spend;
+  // Compute portal values for selected day
+  const portalEntries = Object.entries(D.portals)
+    .filter(([pk]) => pk !== '')
+    .map(([pk, p]) => {
+      const todayRs = toLakhs(p.dailySales[selDay - 1] || 0);
+      const mtdRs   = toLakhs(p.dailySales.slice(0, selDay).reduce((a, b) => a + b, 0));
+      const lmRs    = toLakhs(p.lm);
+      return { pk, p, todayRs, mtdRs, lmRs };
+    })
+    .sort((a, b) => b.mtdRs - a.mtdRs);
+
+  // Helper: render a sales cell — editable input if value is 0
+  const salesCell = (val, id, type) => {
+    if (val === 0) {
+      if (type === 'lm') {
+        return `<td class="enter-data-lm-cell" title="No last-month data — click to enter manually">
+          <input class="enter-data-lm-inp" type="text" id="${id}"
+                 placeholder="Enter data…"
+                 oninput="recalcTotals()" onblur="formatCell(this)">
+        </td>`;
       }
-
-      // ── Populate brand dropdown ──────────────────────────────
-      const sel = document.getElementById('rBrand');
-      sel.innerHTML = '<option value="">— Select Brand —</option>' +
-        Object.keys(PARSED_DATA).sort().map(s =>
-          `<option value="${s}">${s} (${PARSED_DATA[s].resp})</option>`
-        ).join('');
-
-      // Show report screen
-      document.getElementById('uploadScreen').style.display = 'none';
-      document.getElementById('reportScreen').style.display = '';
-
-      showLoading(false);
-      toast(`Loaded ${Object.keys(PARSED_DATA).length} brands — select one to generate report`, 'ok');
+      return `<td class="enter-data-cell" title="No DSR data for this day — click to enter manually">
+        <input class="enter-data-inp" type="text" id="${id}"
+               placeholder="Enter data…"
+               oninput="recalcTotals()" onblur="formatCell(this)">
+      </td>`;
     }
+    const cls = type === 'lm' ? 'prev-s-cell' : 'sales-cell';
+    return `<td class="${cls}" id="${id}">${fmt(val)}</td>`;
+  };
 
-    // ════════════════════════════════════════════════════════════
-    // GENERATE REPORT
-    // ════════════════════════════════════════════════════════════
-    function generateReport() {
-      const sk = document.getElementById('rBrand').value;
-      if (!sk) return;
+  const rows = portalEntries.map(({ pk, p, todayRs, mtdRs, lmRs }, i) => {
+    const cls = PORTAL_CSS[pk] || 'pb-oth';
+    return `
+    <tr>
+      <td><span class="${cls}">${pk}</span></td>
 
-      const c1 = document.getElementById('rCol1').value || 'Today';
-      const c2 = document.getElementById('rCol2').value || 'MTD';
-      const c3 = document.getElementById('rCol3').value || 'Last Month';
+      <!-- TODAY SALES (auto or enter) -->
+      ${salesCell(todayRs, `ts_t1_${i}`, 'today')}
 
-      // Update column headers
-      document.getElementById('hdr1').textContent = c1;
-      document.getElementById('hdr2').textContent = c2;
-      document.getElementById('hdr3').textContent = c3;
+      <!-- TODAY ADS SPEND (manual) -->
+      <td class="spend-cell" title="Click to enter Ads Spend for ${c1}">
+        <input class="spend-inp" type="text" id="sp_t1_${i}"
+               placeholder="Enter spend…"
+               oninput="recalcTotals()" onblur="formatCell(this)">
+      </td>
 
-      const D = PARSED_DATA[sk];
-      if (!D) return;
+      <!-- MTD SALES (auto or enter) -->
+      ${salesCell(mtdRs, `ts_t2_${i}`, 'mtd')}
 
-      // Brand header
-      document.getElementById('rptBrandHeader').textContent = D.brand + (D.resp ? ` — ${D.resp}` : '');
+      <!-- MTD ADS SPEND (manual) -->
+      <td class="spend-cell" title="Click to enter Ads Spend for ${c2}">
+        <input class="spend-inp" type="text" id="sp_t2_${i}"
+               placeholder="Enter spend…"
+               oninput="recalcTotals()" onblur="formatCell(this)">
+      </td>
 
-      buildTable(D, c1, c2, c3);
-      buildSummaryCards(D, c1, c2, c3);
+      <!-- LAST MONTH SALES (auto or enter) -->
+      ${salesCell(lmRs, `ts_t3_${i}`, 'lm')}
 
-      document.getElementById('statusBadge').innerHTML =
-        `<i class="fas fa-check-circle me-1"></i>Report Generated`;
-    }
+      <!-- LAST MONTH ADS SPEND (manual) -->
+      <td class="prev-sp-cell" title="Click to enter Last Month Ads Spend">
+        <input class="spend-inp" type="text" id="sp_t3sp_${i}"
+               placeholder="Enter spend…"
+               oninput="recalcTotals()">
+      </td>
+    </tr>`;
+  }).join('');
 
-    // ════════════════════════════════════════════════════════════
-    // BUILD TABLE
-    // ════════════════════════════════════════════════════════════
-    function buildTable(D, c1, c2, c3) {
-      const portalEntries = Object.entries(D.portals)
-        .filter(([pk]) => pk !== '') // skip blank portal
-        .sort((a, b) => b[1].mtd - a[1].mtd); // sort by MTD desc
+  // Compute initial totals
+  const totToday = portalEntries.reduce((s, e) => s + e.todayRs, 0);
+  const totMtd   = portalEntries.reduce((s, e) => s + e.mtdRs, 0);
+  const totLm    = portalEntries.reduce((s, e) => s + e.lmRs, 0);
 
-      const rows = portalEntries.map(([pk, p], i) => {
-        const cls = PORTAL_CSS[pk] || 'pb-oth';
-        const todayRs = toLakhs(p.today);
-        const mtdRs   = toLakhs(p.mtd);
-        const lmRs    = toLakhs(p.lm);
+  const totalRow = `
+  <tr class="rpt-total">
+    <td><i class="fas fa-sigma me-1"></i>Total</td>
+    <td class="sales-cell" id="tot_t1">${fmt(totToday)}</td>
+    <td class="spend-cell">
+      <input class="spend-inp" id="tot_sp_t1" placeholder="Total…" readonly style="background:#fef3c7;cursor:default">
+    </td>
+    <td class="sales-cell" id="tot_t2">${fmt(totMtd)}</td>
+    <td class="spend-cell">
+      <input class="spend-inp" id="tot_sp_t2" placeholder="Total…" readonly style="background:#fef3c7;cursor:default">
+    </td>
+    <td class="prev-s-cell" id="tot_t3s">${fmt(totLm)}</td>
+    <td class="prev-sp-cell">
+      <input class="spend-inp" id="tot_t3sp" placeholder="Total…" readonly style="cursor:default">
+    </td>
+  </tr>`;
 
-        return `
-        <tr>
-          <td><span class="${cls}">${pk}</span></td>
+  document.getElementById('rptBody').innerHTML = rows + totalRow;
+}
 
-          <!-- TODAY SALES (auto) -->
-          <td class="sales-cell">${fmt(todayRs)}</td>
+// ════════════════════════════════════════════════════════════
+// SUMMARY CARDS — includes MTD ROAS
+// ════════════════════════════════════════════════════════════
+function buildSummaryCards(D, c1, c2, c3) {
+  const selDay = SELECTED_DAY;
 
-          <!-- TODAY ADS SPEND (manual) -->
-          <td class="spend-cell" title="Click to enter Ads Spend for ${c1}">
-            <input class="spend-inp" type="text" id="sp_t1_${i}"
-                   placeholder="Enter spend…"
-                   oninput="recalcTotals()" onblur="formatCell(this)">
-          </td>
+  const todayRs = Object.values(D.portals)
+    .filter(p => p.dailySales)
+    .reduce((s, p) => s + toLakhs(p.dailySales[selDay - 1] || 0), 0);
 
-          <!-- MTD SALES (auto) -->
-          <td class="sales-cell">${fmt(mtdRs)}</td>
+  const mtdRs = Object.values(D.portals)
+    .filter(p => p.dailySales)
+    .reduce((s, p) => s + toLakhs(p.dailySales.slice(0, selDay).reduce((a, b) => a + b, 0)), 0);
 
-          <!-- MTD ADS SPEND (manual) -->
-          <td class="spend-cell" title="Click to enter Ads Spend for ${c2}">
-            <input class="spend-inp" type="text" id="sp_t2_${i}"
-                   placeholder="Enter spend…"
-                   oninput="recalcTotals()" onblur="formatCell(this)">
-          </td>
+  const lmRs = toLakhs(D.totals.lm);
 
-          <!-- LAST MONTH SALES (auto-filled, editable) -->
-          <td class="prev-s-cell">${fmt(lmRs)}</td>
+  document.getElementById('summaryCards').innerHTML = `
+    <div class="rpt-sum-card" style="border-left:4px solid #f59e0b">
+      <div class="lbl">${c1} Sales</div>
+      <div class="val" id="sc_today_sales">₹${fmt(todayRs)}</div>
+      <div class="sub">${c1}</div>
+    </div>
+    <div class="rpt-sum-card" style="border-left:4px solid #3b82f6">
+      <div class="lbl">${c2} Sales</div>
+      <div class="val" id="sc_mtd_sales">₹${fmt(mtdRs)}</div>
+      <div class="sub">${c2}</div>
+    </div>
+    <div class="rpt-sum-card" style="border-left:4px solid #22c55e">
+      <div class="lbl">Last Month Sales</div>
+      <div class="val">₹${fmt(lmRs)}</div>
+      <div class="sub">${c3}</div>
+    </div>
+    <div class="rpt-sum-card" style="border-left:4px solid #f97316">
+      <div class="lbl">${c1} Ads Spend</div>
+      <div class="val text-muted" style="font-size:.85rem" id="sc_sp1">Enter manually</div>
+      <div class="sub">Type in yellow cells</div>
+    </div>
+    <div class="rpt-sum-card" style="border-left:4px solid #7c3aed">
+      <div class="lbl">${c2} Ads Spend</div>
+      <div class="val text-muted" style="font-size:.85rem" id="sc_sp2">Enter manually</div>
+      <div class="sub">Type in yellow cells</div>
+    </div>
+    <div class="rpt-sum-card" style="border-left:4px solid #0891b2">
+      <div class="lbl">Today ROAS</div>
+      <div class="val" id="sc_roas">—</div>
+      <div class="sub">Today Sales ÷ Today Spend</div>
+    </div>
+    <div class="rpt-sum-card" style="border-left:4px solid #059669">
+      <div class="lbl">MTD ROAS</div>
+      <div class="val" id="sc_mtd_roas">—</div>
+      <div class="sub">MTD Sales ÷ MTD Spend</div>
+    </div>`;
+}
 
-          <!-- LAST MONTH ADS SPEND (manual) -->
-          <td class="prev-sp-cell" title="Click to enter Last Month Ads Spend">
-            <input class="spend-inp" type="text" id="sp_t3sp_${i}"
-                   placeholder="Enter spend…"
-                   oninput="recalcTotals()">
-          </td>
-        </tr>`;
-      }).join('');
+// ════════════════════════════════════════════════════════════
+// RECALCULATE TOTALS — handles editable sales + spend cells
+// ════════════════════════════════════════════════════════════
+function recalcTotals() {
+  const rows = document.querySelectorAll('#rptBody tr:not(.rpt-total)');
+  let sp1=0, sp2=0, sp3=0;
+  let todaySalesSum=0, mtdSalesSum=0, lmSalesSum=0;
 
-      // Totals
-      const totToday = toLakhs(D.totals.today);
-      const totMtd   = toLakhs(D.totals.mtd);
-      const totLm    = toLakhs(D.totals.lm);
-
-      const totalRow = `
-      <tr class="rpt-total">
-        <td><i class="fas fa-sigma me-1"></i>Total</td>
-        <td class="sales-cell" id="tot_t1">${fmt(totToday)}</td>
-        <td class="spend-cell">
-          <input class="spend-inp" id="tot_sp_t1" placeholder="Total…" readonly style="background:#fef3c7;cursor:default">
-        </td>
-        <td class="sales-cell" id="tot_t2">${fmt(totMtd)}</td>
-        <td class="spend-cell">
-          <input class="spend-inp" id="tot_sp_t2" placeholder="Total…" readonly style="background:#fef3c7;cursor:default">
-        </td>
-        <td class="prev-s-cell" id="tot_t3s">${fmt(totLm)}</td>
-        <td class="prev-sp-cell">
-          <input class="spend-inp" id="tot_t3sp" placeholder="Total…" readonly style="cursor:default">
-        </td>
-      </tr>`;
-
-      document.getElementById('rptBody').innerHTML = rows + totalRow;
-    }
-
-    // ════════════════════════════════════════════════════════════
-    // SUMMARY CARDS
-    // ════════════════════════════════════════════════════════════
-    function buildSummaryCards(D, c1, c2, c3) {
-      const todayRs = toLakhs(D.totals.today);
-      const mtdRs   = toLakhs(D.totals.mtd);
-      const lmRs    = toLakhs(D.totals.lm);
-
-      // ROAS = today sales / today spend (calculated live)
-      const calcRoas = () => {
-        const sp = parseFloat((document.getElementById('tot_sp_t1')||{value:''}).value.replace(/,/g,'')) || 0;
-        return sp > 0 ? (todayRs / sp).toFixed(2) + 'x' : '—';
-      };
-
-      document.getElementById('summaryCards').innerHTML = `
-        <div class="rpt-sum-card" style="border-left:4px solid #f59e0b">
-          <div class="lbl">${c1} Sales</div>
-          <div class="val">₹${fmt(todayRs)}</div>
-          <div class="sub">${c1}</div>
-        </div>
-        <div class="rpt-sum-card" style="border-left:4px solid #3b82f6">
-          <div class="lbl">${c2} Sales</div>
-          <div class="val">₹${fmt(mtdRs)}</div>
-          <div class="sub">${c2}</div>
-        </div>
-        <div class="rpt-sum-card" style="border-left:4px solid #22c55e">
-          <div class="lbl">Last Month Sales</div>
-          <div class="val">₹${fmt(lmRs)}</div>
-          <div class="sub">${c3}</div>
-        </div>
-        <div class="rpt-sum-card" style="border-left:4px solid #f97316">
-          <div class="lbl">${c1} Ads Spend</div>
-          <div class="val text-muted" style="font-size:.85rem" id="sc_sp1">Enter manually</div>
-          <div class="sub">Type in yellow cells</div>
-        </div>
-        <div class="rpt-sum-card" style="border-left:4px solid #7c3aed">
-          <div class="lbl">${c2} Ads Spend</div>
-          <div class="val text-muted" style="font-size:.85rem" id="sc_sp2">Enter manually</div>
-          <div class="sub">Type in yellow cells</div>
-        </div>
-        <div class="rpt-sum-card" style="border-left:4px solid #0891b2">
-          <div class="lbl">Today ROAS</div>
-          <div class="val" id="sc_roas">—</div>
-          <div class="sub">Sales ÷ Spend</div>
-        </div>`;
-    }
-
-    // ════════════════════════════════════════════════════════════
-    // RECALCULATE TOTALS
-    // ════════════════════════════════════════════════════════════
-    function recalcTotals() {
-      const rows = document.getElementById('rptBody').querySelectorAll('tr:not(.rpt-total)');
-      let sp1=0, sp2=0, sp3=0;
-
-      rows.forEach((row, i) => {
-        const v = id => {
-          const el = document.getElementById(id);
-          if (!el) return 0;
-          const s = el.value.replace(/,/g,'').trim();
-          return s && !isNaN(s) ? parseFloat(s) : 0;
-        };
-        sp1 += v(`sp_t1_${i}`);
-        sp2 += v(`sp_t2_${i}`);
-        sp3 += v(`sp_t3sp_${i}`);
-      });
-
-      const setEl = (id, v) => { const el=document.getElementById(id); if(el) el.value = v ? fmt(v) : ''; };
-      setEl('tot_sp_t1', sp1);
-      setEl('tot_sp_t2', sp2);
-      setEl('tot_t3sp',  sp3);
-
-      // Update summary cards
-      const sc1 = document.getElementById('sc_sp1');
-      const sc2 = document.getElementById('sc_sp2');
-      const scR = document.getElementById('sc_roas');
-      if (sc1) sc1.innerHTML = sp1 > 0 ? `<span>₹${fmt(sp1)}</span>` : '<span class="text-muted" style="font-size:.85rem">Enter manually</span>';
-      if (sc2) sc2.innerHTML = sp2 > 0 ? `<span>₹${fmt(sp2)}</span>` : '<span class="text-muted" style="font-size:.85rem">Enter manually</span>';
-
-      // ROAS
-      const tot1El = document.getElementById('tot_t1');
-      if (scR && tot1El && sp1 > 0) {
-        const salesVal = parseFloat(tot1El.textContent.replace(/,/g,'')) || 0;
-        scR.textContent = salesVal > 0 ? (salesVal/sp1).toFixed(2)+'x' : '—';
-      }
-    }
-
-    function formatCell(inp) {
-      const raw = inp.value.replace(/,/g,'').trim();
-      if (raw && !isNaN(raw)) inp.value = fmt(parseFloat(raw));
-    }
-
-    // ════════════════════════════════════════════════════════════
-    // EXPORT TO EXCEL
-    // ════════════════════════════════════════════════════════════
-    function exportExcel() {
-      const sk = document.getElementById('rBrand').value;
-      if (!sk || !PARSED_DATA[sk]) { toast('Generate a report first', 'err'); return; }
-
-      const D = PARSED_DATA[sk];
-      const c1 = document.getElementById('rCol1').value;
-      const c2 = document.getElementById('rCol2').value;
-      const c3 = document.getElementById('rCol3').value;
-
-      const rows = [];
-      rows.push([D.brand + (D.resp ? ` — ${D.resp}` : '')]);
-      rows.push(['Portal', `${c1} Sales`, `${c1} Ads Spend`, `${c2} Sales`, `${c2} Ads Spend`, `${c3} Sales`, `${c3} Ads Spend`]);
-
-      const entries = Object.entries(D.portals).filter(([pk])=>pk!=='').sort((a,b)=>b[1].mtd-a[1].mtd);
-      entries.forEach(([pk, p], i) => {
-        const sp1 = (document.getElementById(`sp_t1_${i}`)||{value:''}).value.replace(/,/g,'') || '';
-        const sp2 = (document.getElementById(`sp_t2_${i}`)||{value:''}).value.replace(/,/g,'') || '';
-        const sp3 = (document.getElementById(`sp_t3sp_${i}`)||{value:''}).value.replace(/,/g,'') || '';
-        rows.push([pk, toLakhs(p.today), sp1, toLakhs(p.mtd), sp2, toLakhs(p.lm), sp3]);
-      });
-
-      const sp1t = (document.getElementById('tot_sp_t1')||{value:''}).value.replace(/,/g,'') || '';
-      const sp2t = (document.getElementById('tot_sp_t2')||{value:''}).value.replace(/,/g,'') || '';
-      const sp3t = (document.getElementById('tot_t3sp')||{value:''}).value.replace(/,/g,'') || '';
-      rows.push(['Total', toLakhs(D.totals.today), sp1t, toLakhs(D.totals.mtd), sp2t, toLakhs(D.totals.lm), sp3t]);
-
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      const wb2 = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb2, ws, 'Brand Report');
-      XLSX.writeFile(wb2, `${sk.replace(/[^a-zA-Z0-9]/g,'_')}_Report.xlsx`);
-      toast('Exported!', 'ok');
-    }
-
-    // ════════════════════════════════════════════════════════════
-    // HELPERS
-    // ════════════════════════════════════════════════════════════
-    const nv = v => { const x = parseFloat(v); return isNaN(x) ? 0 : x; };
-    const r2 = v => Math.round(v * 100) / 100;
-
-    // Convert Lakhs → Rupees (integer)
-    const toLakhs = v => Math.round(nv(v) * 100000);
-
-    // Format as Indian number
-    const fmt = n => {
-      if (n === '' || n === null || n === undefined) return '';
-      const num = Number(n);
-      if (isNaN(num)) return '';
-      if (num === 0) return '0';
-      return num.toLocaleString('en-IN');
+  rows.forEach((row, i) => {
+    // Read value from either an <input> or a plain <td>
+    const cellVal = id => {
+      const el = document.getElementById(id);
+      if (!el) return 0;
+      const raw = (el.tagName === 'INPUT' ? el.value : el.textContent)
+                   .replace(/,/g,'').trim();
+      return raw && !isNaN(raw) ? parseFloat(raw) : 0;
     };
 
-    function inferDaysInMonth(filename) {
-      const fn = filename.toLowerCase();
-      const months = {jan:31,feb:28,mar:31,apr:30,may:31,jun:30,jul:31,aug:31,sep:30,oct:31,nov:30,dec:31};
-      for (const [m, d] of Object.entries(months)) {
-        if (fn.includes(m)) return d;
-      }
-      return new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
-    }
+    todaySalesSum += cellVal(`ts_t1_${i}`);
+    mtdSalesSum   += cellVal(`ts_t2_${i}`);
+    lmSalesSum    += cellVal(`ts_t3_${i}`);
+    sp1           += cellVal(`sp_t1_${i}`);
+    sp2           += cellVal(`sp_t2_${i}`);
+    sp3           += cellVal(`sp_t3sp_${i}`);
+  });
 
-    const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    function prevMonth(label, filename) {
-      // Try to find month in label
-      const idx = MONTH_NAMES.findIndex(m => label.toLowerCase().startsWith(m.toLowerCase()));
-      if (idx >= 0) return MONTH_NAMES[(idx + 11) % 12] + "'" + new Date().getFullYear().toString().slice(2);
-      // Try from filename
-      const fn = filename.toLowerCase();
-      for (let i = 0; i < MONTH_NAMES.length; i++) {
-        if (fn.includes(MONTH_NAMES[i].toLowerCase())) {
-          return MONTH_NAMES[(i + 11) % 12] + "'" + new Date().getFullYear().toString().slice(2);
-        }
-      }
-      return 'Last Month';
-    }
+  // Update totals row
+  const setText  = (id, v) => { const el=document.getElementById(id); if(el) el.textContent = fmt(v); };
+  const setInput = (id, v) => { const el=document.getElementById(id); if(el) el.value = v ? fmt(v) : ''; };
 
-    function showLoading(show) {
-      document.getElementById('loadingBar').style.display = show ? 'block' : 'none';
+  setText('tot_t1',   todaySalesSum);
+  setText('tot_t2',   mtdSalesSum);
+  setText('tot_t3s',  lmSalesSum);
+  setInput('tot_sp_t1', sp1);
+  setInput('tot_sp_t2', sp2);
+  setInput('tot_t3sp',  sp3);
+
+  // Update summary card live values
+  const sc1  = document.getElementById('sc_sp1');
+  const sc2  = document.getElementById('sc_sp2');
+  const scR  = document.getElementById('sc_roas');
+  const scMR = document.getElementById('sc_mtd_roas');
+  const scTS = document.getElementById('sc_today_sales');
+  const scMS = document.getElementById('sc_mtd_sales');
+
+  if (scTS) scTS.textContent = '₹' + fmt(todaySalesSum);
+  if (scMS) scMS.textContent = '₹' + fmt(mtdSalesSum);
+
+  if (sc1) sc1.innerHTML = sp1 > 0
+    ? `<span>₹${fmt(sp1)}</span>`
+    : '<span class="text-muted" style="font-size:.85rem">Enter manually</span>';
+  if (sc2) sc2.innerHTML = sp2 > 0
+    ? `<span>₹${fmt(sp2)}</span>`
+    : '<span class="text-muted" style="font-size:.85rem">Enter manually</span>';
+
+  // Today ROAS
+  if (scR) scR.textContent = (todaySalesSum > 0 && sp1 > 0)
+    ? (todaySalesSum / sp1).toFixed(2) + 'x' : '—';
+
+  // MTD ROAS ← NEW
+  if (scMR) scMR.textContent = (mtdSalesSum > 0 && sp2 > 0)
+    ? (mtdSalesSum / sp2).toFixed(2) + 'x' : '—';
+}
+
+function formatCell(inp) {
+  const raw = inp.value.replace(/,/g,'').trim();
+  if (raw && !isNaN(raw)) inp.value = fmt(parseFloat(raw));
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORT TO EXCEL
+// ════════════════════════════════════════════════════════════
+function exportExcel() {
+  const sk = document.getElementById('rBrand').value;
+  if (!sk || !PARSED_DATA[sk]) { toast('Generate a report first', 'err'); return; }
+
+  const D  = PARSED_DATA[sk];
+  const c1 = document.getElementById('rCol1').value;
+  const c2 = document.getElementById('rCol2').value;
+  const c3 = document.getElementById('rCol3').value;
+  const selDay = SELECTED_DAY;
+
+  const eRows = [];
+  eRows.push([D.brand]);  // brand name only
+  eRows.push(['Portal',
+    `${c1} Sales`, `${c1} Ads Spend`,
+    `${c2} Sales`, `${c2} Ads Spend`,
+    `${c3} Sales`, `${c3} Ads Spend`]);
+
+  const entries = Object.entries(D.portals)
+    .filter(([pk]) => pk !== '')
+    .map(([pk, p]) => ({
+      pk,
+      todayRs: toLakhs(p.dailySales[selDay - 1] || 0),
+      mtdRs:   toLakhs(p.dailySales.slice(0, selDay).reduce((a, b) => a + b, 0)),
+      lmRs:    toLakhs(p.lm)
+    }))
+    .sort((a, b) => b.mtdRs - a.mtdRs);
+
+  entries.forEach(({ pk, todayRs, mtdRs, lmRs }, i) => {
+    const cellVal = id => {
+      const el = document.getElementById(id);
+      if (!el) return '';
+      const v = el.tagName === 'INPUT' ? el.value : el.textContent;
+      return v.replace(/,/g,'').trim() || '';
+    };
+    eRows.push([
+      pk,
+      todayRs, cellVal(`sp_t1_${i}`),
+      mtdRs,   cellVal(`sp_t2_${i}`),
+      lmRs,    cellVal(`sp_t3sp_${i}`)
+    ]);
+  });
+
+  // Totals
+  const tV = id => {
+    const el = document.getElementById(id);
+    if (!el) return '';
+    const v = el.tagName === 'INPUT' ? el.value : el.textContent;
+    return v.replace(/,/g,'').trim() || '';
+  };
+  eRows.push(['Total',
+    tV('tot_t1'),  tV('tot_sp_t1'),
+    tV('tot_t2'),  tV('tot_sp_t2'),
+    tV('tot_t3s'), tV('tot_t3sp')]);
+
+  const ws  = XLSX.utils.aoa_to_sheet(eRows);
+  const wb2 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2, ws, 'Brand Report');
+  XLSX.writeFile(wb2, `${sk.replace(/[^a-zA-Z0-9]/g,'_')}_Day${selDay}_Report.xlsx`);
+  toast('Exported!', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════
+const nv = v => { const x = parseFloat(v); return isNaN(x) ? 0 : x; };
+
+// Convert Lakhs → Rupees (integer)
+const toLakhs = v => Math.round(nv(v) * 100000);
+
+// Format as Indian number
+const fmt = n => {
+  if (n === '' || n === null || n === undefined) return '';
+  const num = Number(n);
+  if (isNaN(num)) return '';
+  if (num === 0) return '0';
+  return num.toLocaleString('en-IN');
+};
+
+function inferDaysInMonth(filename) {
+  const fn = filename.toLowerCase();
+  const months = {jan:31,feb:28,mar:31,apr:30,may:31,jun:30,jul:31,aug:31,sep:30,oct:31,nov:30,dec:31};
+  for (const [m, d] of Object.entries(months)) {
+    if (fn.includes(m)) return d;
+  }
+  return new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+}
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function prevMonth(label, filename) {
+  const idx = MONTH_NAMES.findIndex(m => label.toLowerCase().startsWith(m.toLowerCase()));
+  if (idx >= 0) return MONTH_NAMES[(idx+11)%12] + "'" + new Date().getFullYear().toString().slice(2);
+  const fn = filename.toLowerCase();
+  for (let i = 0; i < MONTH_NAMES.length; i++) {
+    if (fn.includes(MONTH_NAMES[i].toLowerCase())) {
+      return MONTH_NAMES[(i+11)%12] + "'" + new Date().getFullYear().toString().slice(2);
     }
-    function toast(msg, type='') {
-      const el = document.createElement('div');
-      el.className = `toast-msg ${type}`;
-      el.textContent = msg;
-      document.getElementById('toastWrap').appendChild(el);
-      setTimeout(() => el.remove(), 3500);
-    }
+  }
+  return 'Last Month';
+}
+
+function showLoading(show) {
+  document.getElementById('loadingBar').style.display = show ? 'block' : 'none';
+}
+function toast(msg, type='') {
+  const el = document.createElement('div');
+  el.className = `toast-msg ${type}`;
+  el.textContent = msg;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
 </script>
 </body>
 </html>
