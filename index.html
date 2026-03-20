@@ -582,7 +582,14 @@ function buildTable(D, c1, c2, c3) {
       </td>
 
       <!-- MTD SALES (auto or enter) -->
-      ${salesCell(mtdRs, `ts_t2_${i}`, 'mtd')}
+      ${(pk === 'Flipkart' || pk === 'Shopsy')
+  ? `<td class="enter-data-cell" title="Enter MTD manually for ${pk}">
+        <input class="enter-data-inp" type="text" id="ts_t2_${i}"
+               placeholder="Enter data…"
+               oninput="recalcTotals()" onblur="formatCell(this)">
+     </td>`
+  : salesCell(mtdRs, `ts_t2_${i}`, 'mtd')
+}
 
       <!-- MTD ADS SPEND (manual) -->
       <td class="spend-cell" title="Click to enter Ads Spend for ${c2}">
