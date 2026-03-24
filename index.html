@@ -252,15 +252,7 @@
     <!-- MAIN REPORT TABLE -->
     <div class="rpt-wrap anim d2" id="rptTableWrap">
         <div class="rpt-header" id="rptBrandHeader">Select a brand to generate report</div>
-        <div class="rpt-sub-header no-print">
-            <i class="fas fa-info-circle me-1"></i>
-            Sales values auto-filled from DSR &nbsp;&nbsp;
-            <span style="background:#fde68a;padding:1px 6px;border-radius:4px">Yellow = Ads Spend</span> — type manually &nbsp;&nbsp;
-            <span style="background:#bbf7d0;padding:1px 6px;border-radius:4px">Green = Last Month Sales</span> — auto-filled &amp; editable &nbsp;&nbsp;
-            <span style="background:#bae6fd;padding:1px 6px;border-radius:4px">Blue = No DSR data</span> — enter manually
-        </div>
-
-        <div class="table-responsive">
+                <div class="table-responsive">
             <table class="rpt-table" id="mainRptTbl">
                 <thead>
                 <tr>
@@ -423,7 +415,11 @@ function parseWorkbook(wb) {
     const sk = String(seller).trim();
     const pk = String(portal || '').trim();
 
-    const lm    = nv(row[C_LM]);
+    let lm = nv(row[C_LM]);
+// fallback if LM is 0 try nearby column (common DSR shift)
+if (lm === 0) {
+  lm = nv(row[C_LM - 1]) || nv(row[C_LM + 1]);
+}
     const stgt  = nv(row[C_STGT]);
 
     if (!PARSED_DATA[sk]) {
@@ -825,7 +821,11 @@ function exportExcel() {
 // ════════════════════════════════════════════════════════════
 // HELPERS
 // ════════════════════════════════════════════════════════════
-const nv = v => { const x = parseFloat(v); return isNaN(x) ? 0 : x; };
+const nv = v => {
+  if (v === null || v === undefined || v === '') return 0;
+  const x = parseFloat(String(v).replace(/,/g,''));
+  return isNaN(x) ? 0 : x;
+};
 
 // Convert Lakhs → Rupees (integer)
 const toLakhs = v => Math.round(nv(v) * 100000);
