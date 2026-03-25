@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>DSR Brand Report</title>
+    <title>DSR Brand Report & Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         :root{--pri:#1e3a5f;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--red:#dc2626;--bg:#f0f4f8}
         *{box-sizing:border-box;margin:0;padding:0}
@@ -18,6 +19,13 @@
         .topbar h1{font-size:1rem;font-weight:700;letter-spacing:.3px;margin:0}
         .logo-dot{width:9px;height:9px;background:#38bdf8;border-radius:50%;display:inline-block;
           margin-right:8px;box-shadow:0 0 6px #38bdf8}
+
+        /* VIEW TABS */
+        .view-tabs{display:flex;gap:2px;background:rgba(255,255,255,.12);border-radius:8px;padding:2px}
+        .view-tab{background:none;border:none;color:rgba(255,255,255,.65);padding:5px 16px;
+          border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+        .view-tab:hover{color:#fff;background:rgba(255,255,255,.1)}
+        .view-tab.active{background:rgba(255,255,255,.22);color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 
         /* UPLOAD ZONE */
         .upload-zone{border:2.5px dashed #93c5fd;background:#fff;border-radius:16px;padding:44px 24px;
@@ -72,23 +80,18 @@
           padding:10px 16px;font-size:.85rem;font-family:inherit;outline:none;color:#92400e;font-weight:600}
         .spend-inp::placeholder{color:#d97706;opacity:.6;font-style:italic;font-size:.75rem}
         .spend-inp:focus{background:#fef9c3;color:#78350f}
-
-        /* ENTER DATA CELLS — for portals with 0 sales */
         .enter-data-cell{background:#f0f9ff!important;padding:0!important;position:relative}
         .enter-data-inp{border:none;background:transparent;width:100%;min-width:110px;text-align:right;
           padding:10px 16px;font-size:.85rem;font-family:inherit;outline:none;
           color:#0369a1;font-weight:700;cursor:text}
         .enter-data-inp::placeholder{color:#7dd3fc;opacity:1;font-style:italic;font-size:.74rem;font-weight:600}
         .enter-data-inp:focus{background:#e0f2fe;color:#0c4a6e}
-
-        /* ENTER DATA CELLS for Last Month (green shade) */
         .enter-data-lm-cell{background:#f0fdf4!important;padding:0!important;position:relative}
         .enter-data-lm-inp{border:none;background:transparent;width:100%;min-width:110px;text-align:right;
           padding:10px 16px;font-size:.85rem;font-family:inherit;outline:none;
           color:#166534;font-weight:700;cursor:text}
         .enter-data-lm-inp::placeholder{color:#86efac;opacity:1;font-style:italic;font-size:.74rem;font-weight:600}
         .enter-data-lm-inp:focus{background:#dcfce7;color:#14532d}
-
         .prev-s-cell{background:#f0fdf4;font-weight:600;color:#166534}
         .prev-sp-cell{background:#fffbeb;padding:0!important}
         .rpt-total td{background:#f1f5f9;font-weight:800;font-size:.87rem;
@@ -107,7 +110,7 @@
         .status-badge{display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#166534;
           border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:700}
 
-        /* SUMMARY CARDS */
+        /* SUMMARY CARDS (brand report) */
         .rpt-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
         .rpt-sum-card{background:#fff;border-radius:10px;padding:12px 14px;
           box-shadow:0 1px 6px rgba(0,0,0,.07);text-align:center}
@@ -134,13 +137,109 @@
         .loading-bar{height:3px;background:linear-gradient(90deg,#2563eb,#38bdf8,#2563eb);
           background-size:200% 100%;animation:shimmer 1.5s linear infinite;border-radius:2px;display:none}
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         .anim{animation:fadeUp .35s ease both}
         .d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}
+        .d4{animation-delay:.2s}.d5{animation-delay:.25s}.d6{animation-delay:.3s}
 
         input:focus{box-shadow:inset 0 0 0 2px rgba(234,179,8,.4)}
         .enter-data-inp:focus,.enter-data-lm-inp:focus{box-shadow:inset 0 0 0 2px rgba(14,165,233,.35)}
+
+        /* ═══════════════════════════════════════════════════ */
+        /*  DASHBOARD VIEW STYLES                              */
+        /* ═══════════════════════════════════════════════════ */
+
+        /* OVERVIEW GRID */
+        .ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}
+        .ov{background:#fff;border-radius:12px;padding:16px 18px;
+          box-shadow:0 1px 8px rgba(0,0,0,.08);border-left:4px solid var(--acc)}
+        .ov.g{border-color:var(--ok)}.ov.o{border-color:var(--warn)}
+        .ov.r{border-color:var(--red)}.ov.p{border-color:#7c3aed}.ov.t{border-color:#0891b2}
+        .ov-lbl{font-size:.62rem;color:#64748b;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px}
+        .ov-val{font-size:1.55rem;font-weight:800;color:#0f172a;line-height:1.05}
+        .ov-sub{font-size:.73rem;margin-top:5px;color:#64748b}
+        .ov-sub b{color:#0f172a}
+        .up-t{color:var(--ok)}.dn-t{color:var(--red)}
+
+        /* SC CARDS */
+        .sc{background:#fff;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden}
+        .sc-hd{padding:13px 18px;border-bottom:1px solid #f1f5f9;
+          font-weight:700;font-size:.88rem;display:flex;align-items:center;
+          justify-content:space-between;color:#1e293b}
+        .ch-box{height:265px;position:relative;padding:14px}
+
+        /* RESPONSIBLE */
+        .rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;padding:14px}
+        .rc{background:#f8fafc;border-radius:10px;padding:14px;border-left:3px solid #2563eb}
+        .rc-name{font-weight:700;font-size:.9rem;color:#1e293b}
+        .rc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center;margin-top:10px}
+        .rc-item{border-right:1px solid #e2e8f0;padding:4px 2px}
+        .rc-item:last-child{border:none}
+        .rc-l{font-size:.6rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em}
+        .rc-v{font-weight:700;font-size:.83rem;color:#1e293b}
+        .pb{height:4px;background:#e2e8f0;border-radius:2px;margin-top:8px;overflow:hidden}
+        .pb span{display:block;height:100%;border-radius:2px;transition:.4s}
+
+        /* BRAND TABLE (dashboard) */
+        .btbl{font-size:.78rem;width:100%}
+        .btbl th{background:#f8fafc;padding:9px 11px;font-weight:700;color:#475569;
+          border-bottom:2px solid #e2e8f0;white-space:nowrap}
+        .btbl th:not(:first-child):not(:nth-child(2)):not(:nth-child(3)){text-align:right}
+        .btbl td{padding:7px 11px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+        .btbl td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)){text-align:right}
+        .btbl tr:hover>td{background:#fafbff}
+        .sub-tbl{background:#eff6ff}
+        .sub-tbl td{font-size:.74rem;color:#334155}
+
+        /* BADGES */
+        .ab{display:inline-block;border-radius:5px;padding:2px 8px;
+          font-size:.71rem;font-weight:700;min-width:50px;text-align:center}
+        .ab-g{background:#dcfce7;color:#166534}
+        .ab-o{background:#fef3c7;color:#92400e}
+        .ab-r{background:#fee2e2;color:#991b1b}
+        .ab-b{background:#dbeafe;color:#1e40af}
+
+        /* PORTAL PILL (dashboard) */
+        .pp{display:inline-block;border-radius:20px;padding:2px 9px;
+          font-size:.68rem;font-weight:600;margin:1px}
+        .fk{background:#fff7ed;color:#9a3412}
+        .az{background:#f0fdf4;color:#14532d}
+        .ms{background:#fdf4ff;color:#7e22ce}
+        .mn{background:#ecfdf5;color:#065f46}
+        .zt{background:#fef9c3;color:#713f12}
+        .sh{background:#fdf2f8;color:#9d174d}
+        .bl{background:#f0fdf4;color:#166534}
+        .oth{background:#f1f5f9;color:#475569}
+
+        /* DATE BADGE */
+        .date-badge{background:rgba(255,255,255,.15);color:#fff;border-radius:8px;
+          padding:4px 12px;font-size:.75rem;font-weight:700}
+
+        /* TOGGLE */
+        .exp-btn{background:none;border:none;cursor:pointer;color:#94a3b8;
+          font-size:.8rem;padding:2px 6px;transition:.2s;border-radius:4px}
+        .exp-btn:hover{background:#eff6ff;color:var(--acc)}
+
+        /* SEARCH */
+        .search-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;
+          padding:5px 10px;font-size:.78rem;width:180px;outline:none}
+        .search-box:focus{border-color:var(--acc)}
+
+        /* SUMMARY ROW */
+        .sum-row{background:linear-gradient(135deg,#1e3a5f,#2563eb);
+          color:#fff;border-radius:12px;padding:14px 20px;margin-bottom:12px}
+        .sum-row .lbl{font-size:.65rem;opacity:.8;text-transform:uppercase;letter-spacing:.08em}
+        .sum-row .val{font-size:1.3rem;font-weight:800}
+
+        /* PORTAL TABLE (dashboard) */
+        .ptbl th{background:#f8fafc;padding:8px 12px;font-weight:700;color:#475569;
+          border-bottom:2px solid #e2e8f0;font-size:.78rem}
+        .ptbl td{padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:.8rem}
+        .ptbl tr:hover td{background:#fafbff}
+
+        /* DASH FILTER BAR */
+        .dash-fbar{background:#fff;border-radius:12px;padding:10px 16px;
+          box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 
         @media print{
           .no-print{display:none!important}
@@ -151,7 +250,6 @@
           .spend-inp,.enter-data-inp,.enter-data-lm-inp{color:#000;font-size:9pt}
           .fbar,.rpt-summary,.legend-bar .no-print{display:none!important}
         }
-
         ::-webkit-scrollbar{width:5px;height:5px}
         ::-webkit-scrollbar-track{background:#f1f5f9}
         ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
@@ -164,8 +262,18 @@
     <div class="d-flex align-items-center gap-2">
         <span class="logo-dot"></span>
         <h1>DSR Sales Dashboard</h1>
+        <span class="date-badge ms-2" id="topDateBadge"></span>
     </div>
     <div class="d-flex gap-2 align-items-center">
+        <!-- VIEW TABS -->
+        <div class="view-tabs no-print" id="viewTabs" style="display:none">
+            <button class="view-tab active" data-view="brand" onclick="switchView('brand')">
+                <i class="fas fa-file-alt me-1"></i>Brand Report
+            </button>
+            <button class="view-tab" data-view="dashboard" onclick="switchView('dashboard')">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </button>
+        </div>
         <span class="text-secondary small d-none d-md-inline" id="topFileName">No file loaded</span>
         <label for="fileInput" class="btn btn-sm btn-outline-light py-1 mb-0 no-print" style="cursor:pointer">
             <i class="fas fa-upload me-1"></i>New File
@@ -180,8 +288,8 @@
 <!-- ═══ UPLOAD SCREEN ═══ -->
 <div id="uploadScreen" class="container py-4">
     <div class="text-center mb-3">
-        <h2 style="font-weight:800;color:var(--pri);font-size:1.5rem">DSR Brand Report</h2>
-        <p class="text-muted small">Upload your DSR Excel — brand report generates automatically</p>
+        <h2 style="font-weight:800;color:var(--pri);font-size:1.5rem">DSR Brand Report & Dashboard</h2>
+        <p class="text-muted small">Upload your DSR Excel — brand report &amp; full dashboard generate automatically</p>
     </div>
     <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
         <i class="fas fa-file-excel d-block"></i>
@@ -191,7 +299,7 @@
     </div>
 </div>
 
-<!-- ═══ REPORT SCREEN ═══ -->
+<!-- ═══ BRAND REPORT SCREEN ═══ -->
 <div id="reportScreen" style="display:none" class="container-fluid px-3 px-md-4 py-3">
 
     <div id="loadingBar" class="loading-bar mb-2"></div>
@@ -208,7 +316,6 @@
             </select>
         </div>
 
-        <!-- DAY BROWSER — prev / label / next -->
         <div class="d-flex align-items-center gap-1">
             <span class="small text-muted fw-semibold">Day</span>
             <div class="day-nav">
@@ -252,7 +359,7 @@
     <!-- MAIN REPORT TABLE -->
     <div class="rpt-wrap anim d2" id="rptTableWrap">
         <div class="rpt-header" id="rptBrandHeader">Select a brand to generate report</div>
-                <div class="table-responsive">
+        <div class="table-responsive">
             <table class="rpt-table" id="mainRptTbl">
                 <thead>
                 <tr>
@@ -298,6 +405,127 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══ DASHBOARD VIEW ═══                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="dashboardScreen" style="display:none" class="container-fluid px-3 px-md-4 py-3">
+
+    <!-- GRAND SUMMARY BANNER -->
+    <div class="sum-row mb-3 anim" id="dashSummaryBanner">
+      <div class="row g-3 text-center">
+        <div class="col-6 col-md-2">
+          <div class="lbl">Month TGT (L)</div>
+          <div class="val" id="ds_tgt">—</div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="lbl">MTD Achievement (L)</div>
+          <div class="val" id="ds_mtd_ach">—</div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="lbl" id="ds_today_lbl">Today</div>
+          <div class="val" id="ds_today">—</div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="lbl">MTD ACH% vs Full TGT</div>
+          <div class="val" style="color:#fbbf24" id="ds_ach_full">—</div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="lbl">MTD ACH% vs MTD TGT</div>
+          <div class="val" style="color:#4ade80" id="ds_ach_mtd">—</div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="lbl">MTD Target (L)</div>
+          <div class="val" id="ds_mtd_tgt">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD FILTER BAR -->
+    <div class="dash-fbar mb-3 anim d1 no-print">
+      <i class="fas fa-filter text-muted small"></i>
+      <select class="form-select form-select-sm" style="width:160px" id="dashFilterBrand" onchange="applyDashFilters()">
+        <option value="">All Brands</option>
+      </select>
+      <select class="form-select form-select-sm" style="width:130px" id="dashFilterPerson" onchange="applyDashFilters()">
+        <option value="">All Persons</option>
+      </select>
+      <select class="form-select form-select-sm" style="width:140px" id="dashFilterPortal" onchange="applyDashFilters()">
+        <option value="">All Portals</option>
+      </select>
+      <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="clearDashFilters()">
+        <i class="fas fa-times me-1"></i>Clear
+      </button>
+    </div>
+
+    <!-- OVERVIEW CARDS -->
+    <div class="ov-grid mb-3" id="dashOvCards"></div>
+
+    <!-- CHARTS ROW -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-8">
+        <div class="sc h-100 anim">
+          <div class="sc-hd">
+            <span><i class="fas fa-chart-bar me-2 text-primary"></i>Daily Sales Trend</span>
+            <span class="text-muted small">Values in Lakhs</span>
+          </div>
+          <div class="ch-box"><canvas id="dashTrendC"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="sc h-100 anim d2">
+          <div class="sc-hd"><i class="fas fa-store me-2 text-warning"></i>Portal Split (MTD)</div>
+          <div class="ch-box"><canvas id="dashPortalC"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSON PERFORMANCE -->
+    <div class="sc mb-3 anim">
+      <div class="sc-hd">
+        <span><i class="fas fa-users me-2 text-success"></i>Performance by Person</span>
+        <span class="text-muted small">MTD vs Target</span>
+      </div>
+      <div class="rg" id="dashRespGrid"></div>
+    </div>
+
+    <!-- BRAND TABLE -->
+    <div class="sc mb-3 anim">
+      <div class="sc-hd">
+        <span><i class="fas fa-tags me-2 text-primary"></i>Brand-wise Breakdown (Click row to expand portals)</span>
+        <input class="search-box" type="text" placeholder="Search brand..." oninput="filterDashBrands(this.value)">
+      </div>
+      <div class="table-responsive">
+        <table class="btbl" id="dashBrandTbl">
+          <thead>
+            <tr>
+              <th></th><th>Brand</th><th>Seller · Person</th>
+              <th>Month TGT</th><th>MTD TGT</th><th>MTD ACH</th>
+              <th>ACH% Full</th><th>ACH% MTD</th><th>Today</th>
+              <th>Projected</th><th>DRR Cur</th><th>DRR Req</th>
+            </tr>
+          </thead>
+          <tbody id="dashBrandBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PORTAL TABLE -->
+    <div class="sc mb-3 anim">
+      <div class="sc-hd"><i class="fas fa-shopping-cart me-2 text-info"></i>Portal-wise Summary</div>
+      <div class="table-responsive">
+        <table class="ptbl w-100">
+          <thead>
+            <tr>
+              <th>Portal</th><th>MTD ACH (L)</th><th>Today (L)</th><th>Brands</th>
+            </tr>
+          </thead>
+          <tbody id="dashPortalBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+</div>
+
 <div class="toast-wrap" id="toastWrap"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -309,16 +537,14 @@ const C_RESP=1, C_PORTAL=2, C_SELLER=3, C_BRAND=4;
 const C_TGT=9, C_CM=11, C_MTD_TGT=13, C_LM=19;
 const C_STGT=21, C_SPEND=22;
 
-// Day → column index (same structure every DSR file)
 const DAY_COLS = [
-  25,26,27,28,29,30,31,        // W1: days 1–7
-  37,38,39,40,41,42,43,        // W2: days 8–14
-  50,51,52,53,54,55,56,        // W3: days 15–21
-  63,64,65,66,67,68,69,        // W4: days 22–28
-  76,77,78                     // W5: days 29–31
+  25,26,27,28,29,30,31,
+  37,38,39,40,41,42,43,
+  50,51,52,53,54,55,56,
+  63,64,65,66,67,68,69,
+  76,77,78
 ];
 
-// Portal CSS class mapping
 const PORTAL_CSS = {
   'Flipkart':'pb-fk','Shopsy':'pb-fk',
   'Amazon 3P':'pb-az','Amazon B2B':'pb-az','Amazon':'pb-az','Amazon UAE':'pb-az',
@@ -330,13 +556,44 @@ const PORTAL_CSS = {
 // ════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════
-let PARSED_DATA  = {};
-let DAYS_ELAPSED = 1;
-let SELECTED_DAY = 1;   // ← currently viewed day (can be ≤ DAYS_ELAPSED)
-let DAYS_TOTAL   = 31;
-let MONTH_LABEL  = '';
-let LAST_MONTH_LBL = '';
-let CURRENT_FILE = '';
+let PARSED_DATA   = {};
+let RAW_ROWS      = [];    // all parsed data rows for dashboard
+let DAYS_ELAPSED  = 1;
+let SELECTED_DAY  = 1;
+let DAYS_TOTAL    = 31;
+let MONTH_LABEL   = '';
+let LAST_MONTH_LBL= '';
+let CURRENT_FILE  = '';
+let CURRENT_VIEW  = 'brand'; // 'brand' or 'dashboard'
+
+// Dashboard chart instances
+let dashTrendChart  = null;
+let dashPortalChart = null;
+
+// Dashboard data (computed from RAW_ROWS)
+let DASH_DATA = {
+  brands: [],
+  persons: [],
+  portals: [],
+  daily: [],
+  grandTotals: {}
+};
+
+// ════════════════════════════════════════════════════════════
+// VIEW SWITCHING
+// ════════════════════════════════════════════════════════════
+function switchView(view) {
+  CURRENT_VIEW = view;
+  document.querySelectorAll('.view-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.view === view);
+  });
+  document.getElementById('reportScreen').style.display    = (view === 'brand')     ? '' : 'none';
+  document.getElementById('dashboardScreen').style.display  = (view === 'dashboard') ? '' : 'none';
+
+  if (view === 'dashboard' && RAW_ROWS.length > 0) {
+    buildDashboard();
+  }
+}
 
 // ════════════════════════════════════════════════════════════
 // DRAG & DROP
@@ -373,7 +630,7 @@ function handleFile(file) {
 }
 
 // ════════════════════════════════════════════════════════════
-// PARSER — reads DSR sheet with exact column positions
+// PARSER
 // ════════════════════════════════════════════════════════════
 function parseWorkbook(wb) {
   const dsrName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'DSR');
@@ -383,25 +640,25 @@ function parseWorkbook(wb) {
     header:1, defval:null, raw:true
   });
 
-  // Row 0 = SUM (totals), Row 3 = headers, Row 5+ = data
   const sumRow = rows[0];
   const hdrRow = rows[3];
 
-  // Days elapsed
   DAYS_ELAPSED = Math.round(nv(sumRow[7])) || 1;
-  SELECTED_DAY = DAYS_ELAPSED;   // default view = most recent day
+  SELECTED_DAY = DAYS_ELAPSED;
   DAYS_TOTAL   = inferDaysInMonth(CURRENT_FILE);
 
-  // Month labels
   const monthRaw  = String(hdrRow[9] || '').replace(/tgt|target/gi,'').trim();
   MONTH_LABEL     = monthRaw || 'This Month';
   LAST_MONTH_LBL  = prevMonth(MONTH_LABEL, CURRENT_FILE);
 
-  // Update label inputs
+  // Update date badge
+  document.getElementById('topDateBadge').textContent = `Day ${DAYS_ELAPSED} · ${MONTH_LABEL}`;
+
   updateDayLabels();
 
-  // ── Parse data rows ──────────────────────────────────────
+  // ── Parse data rows (brand report) ──
   PARSED_DATA = {};
+  RAW_ROWS    = [];
 
   for (let i = 5; i < rows.length; i++) {
     const row = rows[i];
@@ -414,66 +671,78 @@ function parseWorkbook(wb) {
 
     const sk = String(seller).trim();
     const pk = String(portal || '').trim();
+    const rk = String(resp).trim();
 
     let lm = nv(row[C_LM]);
-// fallback if LM is 0 try nearby column (common DSR shift)
-if (lm === 0) {
-  lm = nv(row[C_LM - 1]) || nv(row[C_LM + 1]);
-}
+    if (lm === 0) { lm = nv(row[C_LM - 1]) || nv(row[C_LM + 1]); }
+
+    const tgt   = nv(row[C_TGT]);
+    const cm    = nv(row[C_CM]);
+    const mtTgt = nv(row[C_MTD_TGT]);
     const stgt  = nv(row[C_STGT]);
 
+    // Build daily sales array
+    const dailySales = DAY_COLS.map((col) => (col < row.length) ? nv(row[col]) : 0);
+
+    // Store raw row for dashboard
+    RAW_ROWS.push({
+      resp: rk, portal: pk, seller: sk,
+      tgt, cm, mtTgt, lm, stgt, dailySales
+    });
+
+    // Brand report grouping (by seller)
     if (!PARSED_DATA[sk]) {
       PARSED_DATA[sk] = {
-        brand: sk,
-        resp: String(resp).trim(),
+        brand: sk, resp: rk,
         portals: {},
         totals: { lm:0, stgt:0 }
       };
     }
-
     const d = PARSED_DATA[sk];
     if (!d.portals[pk]) {
-      d.portals[pk] = {
-        lm: 0,
-        stgt: 0,
-        dailySales: new Array(DAY_COLS.length).fill(0)
-      };
+      d.portals[pk] = { lm: 0, stgt: 0, dailySales: new Array(DAY_COLS.length).fill(0) };
     }
-
-    // Sum each day column
     DAY_COLS.forEach((col, idx) => {
       const v = (col < row.length) ? nv(row[col]) : 0;
       d.portals[pk].dailySales[idx] += v;
     });
-
-    d.portals[pk].lm    += lm;
-    d.portals[pk].stgt  += stgt;
-    d.totals.lm    += lm;
-    d.totals.stgt  += stgt;
+    d.portals[pk].lm   += lm;
+    d.portals[pk].stgt += stgt;
+    d.totals.lm   += lm;
+    d.totals.stgt += stgt;
   }
 
-  // ── Populate brand dropdown — brand name only, no person ──
+  // ── Populate brand dropdown ──
   const sel = document.getElementById('rBrand');
   sel.innerHTML = '<option value="">— Select Brand —</option>' +
     Object.keys(PARSED_DATA).sort().map(s =>
-      `<option value="${s}">${s}</option>`   // ← no (Resp) suffix
+      `<option value="${s}">${s}</option>`
     ).join('');
 
-  // Enable day nav buttons
+  // Enable day nav
   document.getElementById('btnPrevDay').disabled = false;
   document.getElementById('btnNextDay').disabled = false;
   updateDayNavButtons();
 
-  // Show report screen
+  // Show view tabs & report screen
+  document.getElementById('viewTabs').style.display = '';
   document.getElementById('uploadScreen').style.display = 'none';
-  document.getElementById('reportScreen').style.display = '';
+
+  if (CURRENT_VIEW === 'brand') {
+    document.getElementById('reportScreen').style.display = '';
+    document.getElementById('dashboardScreen').style.display = 'none';
+  } else {
+    document.getElementById('reportScreen').style.display = 'none';
+    document.getElementById('dashboardScreen').style.display = '';
+    buildDashboard();
+  }
 
   showLoading(false);
-  toast(`Loaded ${Object.keys(PARSED_DATA).length} brands — select one to generate report`, 'ok');
+  toast(`Loaded ${Object.keys(PARSED_DATA).length} brands — select a view above`, 'ok');
 }
 
 // ════════════════════════════════════════════════════════════
-// DAY NAVIGATION
+// DAY NAVIGATION (brand report)
 // ════════════════════════════════════════════════════════════
 function changeDay(delta) {
   const newDay = SELECTED_DAY + delta;
@@ -497,7 +766,7 @@ function updateDayNavButtons() {
 }
 
 // ════════════════════════════════════════════════════════════
-// GENERATE REPORT
+// GENERATE REPORT (brand report — unchanged)
 // ════════════════════════════════════════════════════════════
 function generateReport() {
   const sk = document.getElementById('rBrand').value;
@@ -514,7 +783,6 @@ function generateReport() {
   const D = PARSED_DATA[sk];
   if (!D) return;
 
-  // Brand header — brand name ONLY, no person name
   document.getElementById('rptBrandHeader').textContent = D.brand;
 
   buildTable(D, c1, c2, c3);
@@ -525,12 +793,11 @@ function generateReport() {
 }
 
 // ════════════════════════════════════════════════════════════
-// BUILD TABLE — uses SELECTED_DAY for today/MTD computation
+// BUILD TABLE (brand report — unchanged)
 // ════════════════════════════════════════════════════════════
 function buildTable(D, c1, c2, c3) {
   const selDay = SELECTED_DAY;
 
-  // Compute portal values for selected day
   const portalEntries = Object.entries(D.portals)
     .filter(([pk]) => pk !== '')
     .map(([pk, p]) => {
@@ -541,19 +808,16 @@ function buildTable(D, c1, c2, c3) {
     })
     .sort((a, b) => b.mtdRs - a.mtdRs);
 
-  // Helper: render a sales cell — editable input if value is 0
   const salesCell = (val, id, type) => {
     if (val === 0) {
       if (type === 'lm') {
         return `<td class="enter-data-lm-cell" title="No last-month data — click to enter manually">
-          <input class="enter-data-lm-inp" type="text" id="${id}"
-                 placeholder="Enter data…"
+          <input class="enter-data-lm-inp" type="text" id="${id}" placeholder="Enter data…"
                  oninput="recalcTotals()" onblur="formatCell(this)">
         </td>`;
       }
       return `<td class="enter-data-cell" title="No DSR data for this day — click to enter manually">
-        <input class="enter-data-inp" type="text" id="${id}"
-               placeholder="Enter data…"
+        <input class="enter-data-inp" type="text" id="${id}" placeholder="Enter data…"
                oninput="recalcTotals()" onblur="formatCell(this)">
       </td>`;
     }
@@ -566,47 +830,30 @@ function buildTable(D, c1, c2, c3) {
     return `
     <tr>
       <td><span class="${cls}">${pk}</span></td>
-
-      <!-- TODAY SALES (auto or enter) -->
       ${salesCell(todayRs, `ts_t1_${i}`, 'today')}
-
-      <!-- TODAY ADS SPEND (manual) -->
       <td class="spend-cell" title="Click to enter Ads Spend for ${c1}">
-        <input class="spend-inp" type="text" id="sp_t1_${i}"
-               placeholder="Enter spend…"
+        <input class="spend-inp" type="text" id="sp_t1_${i}" placeholder="Enter spend…"
                oninput="recalcTotals()" onblur="formatCell(this)">
       </td>
-
-      <!-- MTD SALES (auto or enter) -->
       ${(pk === 'Flipkart' || pk === 'Shopsy')
   ? `<td class="enter-data-cell" title="Enter MTD manually for ${pk}">
-        <input class="enter-data-inp" type="text" id="ts_t2_${i}"
-               placeholder="Enter data…"
+        <input class="enter-data-inp" type="text" id="ts_t2_${i}" placeholder="Enter data…"
                oninput="recalcTotals()" onblur="formatCell(this)">
      </td>`
   : salesCell(mtdRs, `ts_t2_${i}`, 'mtd')
 }
-
-      <!-- MTD ADS SPEND (manual) -->
       <td class="spend-cell" title="Click to enter Ads Spend for ${c2}">
-        <input class="spend-inp" type="text" id="sp_t2_${i}"
-               placeholder="Enter spend…"
+        <input class="spend-inp" type="text" id="sp_t2_${i}" placeholder="Enter spend…"
                oninput="recalcTotals()" onblur="formatCell(this)">
       </td>
-
-      <!-- LAST MONTH SALES (auto or enter) -->
       ${salesCell(lmRs, `ts_t3_${i}`, 'lm')}
-
-      <!-- LAST MONTH ADS SPEND (manual) -->
       <td class="prev-sp-cell" title="Click to enter Last Month Ads Spend">
-        <input class="spend-inp" type="text" id="sp_t3sp_${i}"
-               placeholder="Enter spend…"
+        <input class="spend-inp" type="text" id="sp_t3sp_${i}" placeholder="Enter spend…"
                oninput="recalcTotals()">
       </td>
     </tr>`;
   }).join('');
 
-  // Compute initial totals
   const totToday = portalEntries.reduce((s, e) => s + e.todayRs, 0);
   const totMtd   = portalEntries.reduce((s, e) => s + e.mtdRs, 0);
   const totLm    = portalEntries.reduce((s, e) => s + e.lmRs, 0);
@@ -632,19 +879,16 @@ function buildTable(D, c1, c2, c3) {
 }
 
 // ════════════════════════════════════════════════════════════
-// SUMMARY CARDS — includes MTD ROAS
+// SUMMARY CARDS (brand report — unchanged)
 // ════════════════════════════════════════════════════════════
 function buildSummaryCards(D, c1, c2, c3) {
   const selDay = SELECTED_DAY;
-
   const todayRs = Object.values(D.portals)
     .filter(p => p.dailySales)
     .reduce((s, p) => s + toLakhs(p.dailySales[selDay - 1] || 0), 0);
-
   const mtdRs = Object.values(D.portals)
     .filter(p => p.dailySales)
     .reduce((s, p) => s + toLakhs(p.dailySales.slice(0, selDay).reduce((a, b) => a + b, 0)), 0);
-
   const lmRs = toLakhs(D.totals.lm);
 
   document.getElementById('summaryCards').innerHTML = `
@@ -686,7 +930,7 @@ function buildSummaryCards(D, c1, c2, c3) {
 }
 
 // ════════════════════════════════════════════════════════════
-// RECALCULATE TOTALS — handles editable sales + spend cells
+// RECALC TOTALS (brand report — unchanged)
 // ════════════════════════════════════════════════════════════
 function recalcTotals() {
   const rows = document.querySelectorAll('#rptBody tr:not(.rpt-total)');
@@ -694,15 +938,12 @@ function recalcTotals() {
   let todaySalesSum=0, mtdSalesSum=0, lmSalesSum=0;
 
   rows.forEach((row, i) => {
-    // Read value from either an <input> or a plain <td>
     const cellVal = id => {
       const el = document.getElementById(id);
       if (!el) return 0;
-      const raw = (el.tagName === 'INPUT' ? el.value : el.textContent)
-                   .replace(/,/g,'').trim();
+      const raw = (el.tagName === 'INPUT' ? el.value : el.textContent).replace(/,/g,'').trim();
       return raw && !isNaN(raw) ? parseFloat(raw) : 0;
     };
-
     todaySalesSum += cellVal(`ts_t1_${i}`);
     mtdSalesSum   += cellVal(`ts_t2_${i}`);
     lmSalesSum    += cellVal(`ts_t3_${i}`);
@@ -711,7 +952,6 @@ function recalcTotals() {
     sp3           += cellVal(`sp_t3sp_${i}`);
   });
 
-  // Update totals row
   const setText  = (id, v) => { const el=document.getElementById(id); if(el) el.textContent = fmt(v); };
   const setInput = (id, v) => { const el=document.getElementById(id); if(el) el.value = v ? fmt(v) : ''; };
 
@@ -722,7 +962,6 @@ function recalcTotals() {
   setInput('tot_sp_t2', sp2);
   setInput('tot_t3sp',  sp3);
 
-  // Update summary card live values
   const sc1  = document.getElementById('sc_sp1');
   const sc2  = document.getElementById('sc_sp2');
   const scR  = document.getElementById('sc_roas');
@@ -740,11 +979,8 @@ function recalcTotals() {
     ? `<span>₹${fmt(sp2)}</span>`
     : '<span class="text-muted" style="font-size:.85rem">Enter manually</span>';
 
-  // Today ROAS
   if (scR) scR.textContent = (todaySalesSum > 0 && sp1 > 0)
     ? (todaySalesSum / sp1).toFixed(2) + 'x' : '—';
-
-  // MTD ROAS ← NEW
   if (scMR) scMR.textContent = (mtdSalesSum > 0 && sp2 > 0)
     ? (mtdSalesSum / sp2).toFixed(2) + 'x' : '—';
 }
@@ -755,9 +991,12 @@ function formatCell(inp) {
 }
 
 // ════════════════════════════════════════════════════════════
-// EXPORT TO EXCEL
+// EXPORT TO EXCEL (unchanged)
 // ════════════════════════════════════════════════════════════
 function exportExcel() {
+  // If on dashboard view, export dashboard
+  if (CURRENT_VIEW === 'dashboard') { exportDashboardExcel(); return; }
+
   const sk = document.getElementById('rBrand').value;
   if (!sk || !PARSED_DATA[sk]) { toast('Generate a report first', 'err'); return; }
 
@@ -768,7 +1007,7 @@ function exportExcel() {
   const selDay = SELECTED_DAY;
 
   const eRows = [];
-  eRows.push([D.brand]);  // brand name only
+  eRows.push([D.brand]);
   eRows.push(['Portal',
     `${c1} Sales`, `${c1} Ads Spend`,
     `${c2} Sales`, `${c2} Ads Spend`,
@@ -791,25 +1030,16 @@ function exportExcel() {
       const v = el.tagName === 'INPUT' ? el.value : el.textContent;
       return v.replace(/,/g,'').trim() || '';
     };
-    eRows.push([
-      pk,
-      todayRs, cellVal(`sp_t1_${i}`),
-      mtdRs,   cellVal(`sp_t2_${i}`),
-      lmRs,    cellVal(`sp_t3sp_${i}`)
-    ]);
+    eRows.push([pk, todayRs, cellVal(`sp_t1_${i}`), mtdRs, cellVal(`sp_t2_${i}`), lmRs, cellVal(`sp_t3sp_${i}`)]);
   });
 
-  // Totals
   const tV = id => {
     const el = document.getElementById(id);
     if (!el) return '';
     const v = el.tagName === 'INPUT' ? el.value : el.textContent;
     return v.replace(/,/g,'').trim() || '';
   };
-  eRows.push(['Total',
-    tV('tot_t1'),  tV('tot_sp_t1'),
-    tV('tot_t2'),  tV('tot_sp_t2'),
-    tV('tot_t3s'), tV('tot_t3sp')]);
+  eRows.push(['Total', tV('tot_t1'), tV('tot_sp_t1'), tV('tot_t2'), tV('tot_sp_t2'), tV('tot_t3s'), tV('tot_t3sp')]);
 
   const ws  = XLSX.utils.aoa_to_sheet(eRows);
   const wb2 = XLSX.utils.book_new();
@@ -818,8 +1048,555 @@ function exportExcel() {
   toast('Exported!', 'ok');
 }
 
+function exportDashboardExcel() {
+  if (RAW_ROWS.length === 0) { toast('No data loaded', 'err'); return; }
+
+  const eRows = [['DSR Dashboard Summary — ' + MONTH_LABEL], []];
+  eRows.push(['Brand','Person','Month TGT (L)','MTD TGT (L)','MTD ACH (L)','ACH% Full','ACH% MTD','Today (L)','Projected (L)','DRR Cur','DRR Req']);
+
+  DASH_DATA.brands.forEach(b => {
+    eRows.push([b.brand, b.resp, r2(b.tgt), r2(b.mtTgt), r2(b.cm), r2(b.achFull)+'%', r2(b.achMtd)+'%', r2(b.today), r2(b.proj), r2(b.drrc), r2(b.drrr)]);
+  });
+
+  const ws  = XLSX.utils.aoa_to_sheet(eRows);
+  const wb2 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2, ws, 'Dashboard');
+  XLSX.writeFile(wb2, `Dashboard_Day${DAYS_ELAPSED}_${MONTH_LABEL.replace(/[^a-zA-Z0-9]/g,'_')}.xlsx`);
+  toast('Dashboard exported!', 'ok');
+}
+
 // ════════════════════════════════════════════════════════════
-// HELPERS
+//  DASHBOARD — BUILD FROM RAW_ROWS
+// ════════════════════════════════════════════════════════════
+function buildDashboard() {
+  if (RAW_ROWS.length === 0) return;
+
+  const selDay = DAYS_ELAPSED; // dashboard always shows latest day
+
+  // ── Aggregate by brand (seller) ──
+  const brandMap = {};
+  RAW_ROWS.forEach(r => {
+    const sk = r.seller;
+    if (!brandMap[sk]) {
+      brandMap[sk] = { brand: sk, resp: r.resp, tgt:0, mtTgt:0, cm:0, lm:0, stgt:0, today:0,
+        dailySales: new Array(DAY_COLS.length).fill(0),
+        portalMap: {} };
+    }
+    const b = brandMap[sk];
+    b.tgt   += r.tgt;
+    b.mtTgt += r.mtTgt;
+    b.lm    += r.lm;
+    b.stgt  += r.stgt;
+
+    // daily
+    r.dailySales.forEach((v, idx) => { b.dailySales[idx] += v; });
+
+    // portal sub-breakdown
+    const pk = r.portal;
+    if (pk) {
+      if (!b.portalMap[pk]) { b.portalMap[pk] = { tgt:0, cm:0, today:0 }; }
+      const mtdVal = r.dailySales.slice(0, selDay).reduce((a,v)=>a+v, 0);
+      b.portalMap[pk].cm    += mtdVal;
+      b.portalMap[pk].today += (r.dailySales[selDay - 1] || 0);
+      b.portalMap[pk].tgt   += r.tgt;
+    }
+  });
+
+  // Compute derived fields
+  const brands = Object.values(brandMap).map(b => {
+    const cm    = b.dailySales.slice(0, selDay).reduce((a,v)=>a+v, 0);
+    const today = b.dailySales[selDay - 1] || 0;
+    const achFull = b.tgt > 0 ? (cm / b.tgt * 100) : 0;
+    const achMtd  = b.mtTgt > 0 ? (cm / b.mtTgt * 100) : 0;
+    const daysLeft = DAYS_TOTAL - selDay;
+    const drrc = selDay > 0 ? cm / selDay : 0;
+    const drrr = daysLeft > 0 ? (b.tgt - cm) / daysLeft : 0;
+    const proj = drrc * DAYS_TOTAL;
+    const portals = Object.entries(b.portalMap).map(([pk, pv]) => ({
+      p: pk, tgt: pv.tgt, cm: pv.cm, today: pv.today,
+      ach: pv.tgt > 0 ? (pv.cm / pv.tgt * 100) : 0
+    }));
+    return { ...b, cm, today, achFull, achMtd, drrc, drrr, proj, portals };
+  }).sort((a, b) => b.cm - a.cm);
+
+  // ── Aggregate by person ──
+  const personMap = {};
+  brands.forEach(b => {
+    const rk = b.resp;
+    if (!personMap[rk]) { personMap[rk] = { name: rk, tgt:0, mtTgt:0, cm:0, today:0, brands:0 }; }
+    personMap[rk].tgt   += b.tgt;
+    personMap[rk].mtTgt += b.mtTgt;
+    personMap[rk].cm    += b.cm;
+    personMap[rk].today += b.today;
+    personMap[rk].brands++;
+  });
+  const persons = Object.values(personMap).sort((a, b) => b.cm - a.cm);
+
+  // ── Aggregate by portal ──
+  const portalMap = {};
+  RAW_ROWS.forEach(r => {
+    const pk = r.portal;
+    if (!pk) return;
+    if (!portalMap[pk]) { portalMap[pk] = { portal: pk, cm:0, today:0, brandSet: new Set() }; }
+    const mtdVal = r.dailySales.slice(0, selDay).reduce((a,v)=>a+v, 0);
+    portalMap[pk].cm    += mtdVal;
+    portalMap[pk].today += (r.dailySales[selDay - 1] || 0);
+    portalMap[pk].brandSet.add(r.seller);
+  });
+  const portals = Object.values(portalMap)
+    .map(p => ({ ...p, brands: p.brandSet.size }))
+    .sort((a, b) => b.cm - a.cm);
+
+  // ── Daily totals ──
+  const daily = [];
+  for (let d = 0; d < selDay; d++) {
+    let dayTotal = 0;
+    RAW_ROWS.forEach(r => { dayTotal += (r.dailySales[d] || 0); });
+    daily.push({ day: d+1, val: dayTotal });
+  }
+
+  // Grand totals
+  const grandTgt   = brands.reduce((s,b) => s + b.tgt, 0);
+  const grandMtTgt = brands.reduce((s,b) => s + b.mtTgt, 0);
+  const grandCm    = brands.reduce((s,b) => s + b.cm, 0);
+  const grandToday = brands.reduce((s,b) => s + b.today, 0);
+  const grandAchFull = grandTgt > 0 ? (grandCm / grandTgt * 100) : 0;
+  const grandAchMtd  = grandMtTgt > 0 ? (grandCm / grandMtTgt * 100) : 0;
+  const daysLeft     = DAYS_TOTAL - selDay;
+  const grandDrrc    = selDay > 0 ? grandCm / selDay : 0;
+  const grandDrrr    = daysLeft > 0 ? (grandTgt - grandCm) / daysLeft : 0;
+  const grandProj    = grandDrrc * DAYS_TOTAL;
+
+  DASH_DATA = {
+    brands, persons, portals, daily,
+    grandTotals: { tgt: grandTgt, mtTgt: grandMtTgt, cm: grandCm, today: grandToday,
+      achFull: grandAchFull, achMtd: grandAchMtd, drrc: grandDrrc, drrr: grandDrrr, proj: grandProj }
+  };
+
+  // Populate filter dropdowns
+  populateDashFilters();
+
+  // Render everything
+  renderDashboard(DASH_DATA);
+}
+
+function populateDashFilters() {
+  const brandSel = document.getElementById('dashFilterBrand');
+  const personSel = document.getElementById('dashFilterPerson');
+  const portalSel = document.getElementById('dashFilterPortal');
+
+  const brandNames = [...new Set(RAW_ROWS.map(r => r.seller))].sort();
+  const personNames = [...new Set(RAW_ROWS.map(r => r.resp))].sort();
+  const portalNames = [...new Set(RAW_ROWS.map(r => r.portal).filter(Boolean))].sort();
+
+  brandSel.innerHTML = '<option value="">All Brands</option>' + brandNames.map(n => `<option value="${n}">${n}</option>`).join('');
+  personSel.innerHTML = '<option value="">All Persons</option>' + personNames.map(n => `<option value="${n}">${n}</option>`).join('');
+  portalSel.innerHTML = '<option value="">All Portals</option>' + portalNames.map(n => `<option value="${n}">${n}</option>`).join('');
+}
+
+function applyDashFilters() {
+  // Re-build dashboard with filters (rebuild from RAW_ROWS filtered)
+  buildDashboard();
+}
+
+function clearDashFilters() {
+  document.getElementById('dashFilterBrand').value = '';
+  document.getElementById('dashFilterPerson').value = '';
+  document.getElementById('dashFilterPortal').value = '';
+  buildDashboard();
+}
+
+function getFilteredRows() {
+  let rows = RAW_ROWS;
+  const fb = document.getElementById('dashFilterBrand').value;
+  const fp = document.getElementById('dashFilterPerson').value;
+  const fpt = document.getElementById('dashFilterPortal').value;
+
+  if (fb) rows = rows.filter(r => r.seller === fb);
+  if (fp) rows = rows.filter(r => r.resp === fp);
+  if (fpt) rows = rows.filter(r => r.portal === fpt);
+  return rows;
+}
+
+// Override buildDashboard to use filters
+(function() {
+  const origBuild = buildDashboard;
+  buildDashboard = function() {
+    if (RAW_ROWS.length === 0) return;
+
+    const selDay = DAYS_ELAPSED;
+    const filteredRows = getFilteredRows();
+
+    // ── Aggregate by brand (seller) ──
+    const brandMap = {};
+    filteredRows.forEach(r => {
+      const sk = r.seller;
+      if (!brandMap[sk]) {
+        brandMap[sk] = { brand: sk, resp: r.resp, tgt:0, mtTgt:0, cm:0, lm:0, stgt:0, today:0,
+          dailySales: new Array(DAY_COLS.length).fill(0),
+          portalMap: {} };
+      }
+      const b = brandMap[sk];
+      b.tgt   += r.tgt;
+      b.mtTgt += r.mtTgt;
+      b.lm    += r.lm;
+      b.stgt  += r.stgt;
+      r.dailySales.forEach((v, idx) => { b.dailySales[idx] += v; });
+
+      const pk = r.portal;
+      if (pk) {
+        if (!b.portalMap[pk]) { b.portalMap[pk] = { tgt:0, cm:0, today:0 }; }
+        const mtdVal = r.dailySales.slice(0, selDay).reduce((a,v)=>a+v, 0);
+        b.portalMap[pk].cm    += mtdVal;
+        b.portalMap[pk].today += (r.dailySales[selDay - 1] || 0);
+        b.portalMap[pk].tgt   += r.tgt;
+      }
+    });
+
+    const brands = Object.values(brandMap).map(b => {
+      const cm    = b.dailySales.slice(0, selDay).reduce((a,v)=>a+v, 0);
+      const today = b.dailySales[selDay - 1] || 0;
+      const achFull = b.tgt > 0 ? (cm / b.tgt * 100) : 0;
+      const achMtd  = b.mtTgt > 0 ? (cm / b.mtTgt * 100) : 0;
+      const daysLeft = DAYS_TOTAL - selDay;
+      const drrc = selDay > 0 ? cm / selDay : 0;
+      const drrr = daysLeft > 0 ? (b.tgt - cm) / daysLeft : 0;
+      const proj = drrc * DAYS_TOTAL;
+      const portals = Object.entries(b.portalMap).map(([pk, pv]) => ({
+        p: pk, tgt: pv.tgt, cm: pv.cm, today: pv.today,
+        ach: pv.tgt > 0 ? (pv.cm / pv.tgt * 100) : 0
+      }));
+      return { ...b, cm, today, achFull, achMtd, drrc, drrr, proj, portals };
+    }).sort((a, b) => b.cm - a.cm);
+
+    const personMap = {};
+    brands.forEach(b => {
+      const rk = b.resp;
+      if (!personMap[rk]) { personMap[rk] = { name: rk, tgt:0, mtTgt:0, cm:0, today:0, brands:0 }; }
+      personMap[rk].tgt   += b.tgt;
+      personMap[rk].mtTgt += b.mtTgt;
+      personMap[rk].cm    += b.cm;
+      personMap[rk].today += b.today;
+      personMap[rk].brands++;
+    });
+    const persons = Object.values(personMap).sort((a, b) => b.cm - a.cm);
+
+    const portalMap = {};
+    filteredRows.forEach(r => {
+      const pk = r.portal;
+      if (!pk) return;
+      if (!portalMap[pk]) { portalMap[pk] = { portal: pk, cm:0, today:0, brandSet: new Set() }; }
+      const mtdVal = r.dailySales.slice(0, selDay).reduce((a,v)=>a+v, 0);
+      portalMap[pk].cm    += mtdVal;
+      portalMap[pk].today += (r.dailySales[selDay - 1] || 0);
+      portalMap[pk].brandSet.add(r.seller);
+    });
+    const portals = Object.values(portalMap)
+      .map(p => ({ ...p, brands: p.brandSet.size }))
+      .sort((a, b) => b.cm - a.cm);
+
+    const daily = [];
+    for (let d = 0; d < selDay; d++) {
+      let dayTotal = 0;
+      filteredRows.forEach(r => { dayTotal += (r.dailySales[d] || 0); });
+      daily.push({ day: d+1, val: dayTotal });
+    }
+
+    const grandTgt   = brands.reduce((s,b) => s + b.tgt, 0);
+    const grandMtTgt = brands.reduce((s,b) => s + b.mtTgt, 0);
+    const grandCm    = brands.reduce((s,b) => s + b.cm, 0);
+    const grandToday = brands.reduce((s,b) => s + b.today, 0);
+    const grandAchFull = grandTgt > 0 ? (grandCm / grandTgt * 100) : 0;
+    const grandAchMtd  = grandMtTgt > 0 ? (grandCm / grandMtTgt * 100) : 0;
+    const daysLeft     = DAYS_TOTAL - selDay;
+    const grandDrrc    = selDay > 0 ? grandCm / selDay : 0;
+    const grandDrrr    = daysLeft > 0 ? (grandTgt - grandCm) / daysLeft : 0;
+    const grandProj    = grandDrrc * DAYS_TOTAL;
+
+    DASH_DATA = {
+      brands, persons, portals, daily,
+      grandTotals: { tgt: grandTgt, mtTgt: grandMtTgt, cm: grandCm, today: grandToday,
+        achFull: grandAchFull, achMtd: grandAchMtd, drrc: grandDrrc, drrr: grandDrrr, proj: grandProj }
+    };
+
+    // Only populate filters once (don't reset on filter change)
+    if (document.getElementById('dashFilterBrand').options.length <= 1) {
+      populateDashFilters();
+    }
+
+    renderDashboard(DASH_DATA);
+  };
+})();
+
+// ════════════════════════════════════════════════════════════
+// RENDER DASHBOARD
+// ════════════════════════════════════════════════════════════
+function renderDashboard(data) {
+  const g = data.grandTotals;
+  const selDay = DAYS_ELAPSED;
+
+  // Summary banner
+  document.getElementById('ds_tgt').textContent      = r2(g.tgt);
+  document.getElementById('ds_mtd_ach').textContent   = r2(g.cm);
+  document.getElementById('ds_today_lbl').textContent = `Today (Day ${selDay})`;
+  document.getElementById('ds_today').textContent     = r2(g.today);
+  document.getElementById('ds_ach_full').textContent   = r2(g.achFull) + '%';
+  document.getElementById('ds_ach_mtd').textContent    = r2(g.achMtd) + '%';
+  document.getElementById('ds_mtd_tgt').textContent    = r2(g.mtTgt);
+
+  // Overview cards
+  const daysLeft = DAYS_TOTAL - selDay;
+  const needPerDay = daysLeft > 0 ? (g.tgt - g.cm) / daysLeft : 0;
+
+  document.getElementById('dashOvCards').innerHTML = `
+    <div class="ov anim d1">
+      <div class="ov-lbl"><i class="fas fa-bullseye me-1"></i>${MONTH_LABEL} Target</div>
+      <div class="ov-val">${r2(g.tgt)} L</div>
+      <div class="ov-sub">MTD TGT: <b>${r2(g.mtTgt)} L</b></div>
+    </div>
+    <div class="ov g anim d2">
+      <div class="ov-lbl"><i class="fas fa-chart-line me-1"></i>MTD Achievement</div>
+      <div class="ov-val">${r2(g.cm)} L</div>
+      <div class="ov-sub"><b class="${g.achMtd>=80?'up-t':'dn-t'}">${r2(g.achMtd)}%</b> of MTD Target</div>
+    </div>
+    <div class="ov t anim d3">
+      <div class="ov-lbl"><i class="fas fa-sun me-1"></i>Today (Day ${selDay})</div>
+      <div class="ov-val">${r2(g.today)} L</div>
+      <div class="ov-sub">Day ${selDay} of ${DAYS_TOTAL}</div>
+    </div>
+    <div class="ov o anim d4">
+      <div class="ov-lbl"><i class="fas fa-percentage me-1"></i>Full Month ACH%</div>
+      <div class="ov-val">${r2(g.achFull)}%</div>
+      <div class="ov-sub">Need <b>${r2(needPerDay)} L/day</b> to hit TGT</div>
+    </div>
+    <div class="ov g anim d5">
+      <div class="ov-lbl"><i class="fas fa-tachometer-alt me-1"></i>DRR Current</div>
+      <div class="ov-val">${r2(g.drrc)} L</div>
+      <div class="ov-sub">Required DRR: <b>${r2(g.drrr)} L</b></div>
+    </div>
+    <div class="ov o anim d6">
+      <div class="ov-lbl"><i class="fas fa-eye me-1"></i>Projected (Month End)</div>
+      <div class="ov-val">${r2(g.proj)} L</div>
+      <div class="ov-sub">vs TGT: <b>${r2(g.tgt)} L</b></div>
+    </div>`;
+
+  // Charts
+  renderDashCharts(data);
+
+  // Person cards
+  renderDashPersons(data.persons);
+
+  // Brand table
+  renderDashBrands(data.brands);
+
+  // Portal table
+  renderDashPortals(data.portals);
+}
+
+// ── Dashboard Charts ──
+function renderDashCharts(data) {
+  // Destroy old charts
+  if (dashTrendChart)  { dashTrendChart.destroy();  dashTrendChart = null; }
+  if (dashPortalChart) { dashPortalChart.destroy(); dashPortalChart = null; }
+
+  // Trend chart
+  const cum = [];
+  data.daily.reduce((s,d) => { cum.push(+(s + d.val).toFixed(2)); return s + d.val; }, 0);
+
+  dashTrendChart = new Chart(document.getElementById('dashTrendC'), {
+    type:'bar',
+    data:{
+      labels: data.daily.map(d => `Day ${d.day}`),
+      datasets:[
+        { label:'Daily Sales (L)', data: data.daily.map(d => r2(d.val)),
+          backgroundColor:'rgba(37,99,235,.75)', borderColor:'#2563eb',
+          borderWidth:1.5, borderRadius:5 },
+        { label:'Cumulative (L)', data: cum.map(v => r2(v)), type:'line',
+          borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.08)',
+          tension:.4, borderWidth:2.5, pointRadius:4,
+          pointBackgroundColor:'#16a34a', fill:true, yAxisID:'y1' }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{boxWidth:11,padding:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}L`}}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{grid:{color:'#f1f5f9'},ticks:{callback:v=>v+'L',font:{size:10}},title:{display:true,text:'Daily (L)',font:{size:10}}},
+        y1:{position:'right',grid:{display:false},ticks:{callback:v=>v+'L',font:{size:10}},title:{display:true,text:'Cumulative (L)',font:{size:10}}}
+      }
+    }
+  });
+
+  // Portal donut
+  const PCOL = {
+    'Meesho':'#a855f7','Flipkart':'#f97316','Amazon 3P':'#22c55e',
+    'Shopsy':'#fb923c','Amazon B2B':'#16a34a','Zepto':'#eab308',
+    'Myntra':'#ec4899','Blinkit':'#84cc16','Alpha':'#94a3b8','Amazon UAE':'#14b8a6',
+    'Amazon':'#22c55e','Jio Mart':'#64748b'
+  };
+  const topP = data.portals.filter(p => p.cm > 0).slice(0, 8);
+
+  if (topP.length > 0) {
+    const totalCm = topP.reduce((s, p) => s + p.cm, 0);
+    dashPortalChart = new Chart(document.getElementById('dashPortalC'), {
+      type:'doughnut',
+      data:{
+        labels: topP.map(p => p.portal),
+        datasets:[{
+          data: topP.map(p => r2(p.cm)),
+          backgroundColor: topP.map(p => PCOL[p.portal] || '#94a3b8'),
+          borderWidth:2, borderColor:'#fff', hoverOffset:6
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, cutout:'62%',
+        plugins:{
+          legend:{position:'right',labels:{boxWidth:10,font:{size:10},padding:8}},
+          tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw}L (${totalCm > 0 ? (c.raw/totalCm*100).toFixed(1) : 0}%)`}}
+        }
+      }
+    });
+  }
+}
+
+// ── Person cards ──
+function renderDashPersons(persons) {
+  const RCOL = ['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2','#dc2626','#0d9488','#be123c'];
+
+  document.getElementById('dashRespGrid').innerHTML = persons.map((r, i) => {
+    const achFull = r.tgt > 0 ? (r.cm / r.tgt * 100) : 0;
+    const achMtd  = r.mtTgt > 0 ? (r.cm / r.mtTgt * 100) : 0;
+    return `
+    <div class="rc" style="border-color:${RCOL[i % RCOL.length]}">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="rc-name">${r.name}</div>
+          <div class="text-muted" style="font-size:.67rem">${r.brands} brands</div>
+        </div>
+        ${dashAchBadge(achMtd)}
+      </div>
+      <div class="rc-grid">
+        <div class="rc-item"><div class="rc-l">Month TGT</div><div class="rc-v">${r2(r.tgt)}L</div></div>
+        <div class="rc-item"><div class="rc-l">MTD ACH</div><div class="rc-v">${r2(r.cm)}L</div></div>
+        <div class="rc-item"><div class="rc-l">Full ACH%</div><div class="rc-v">${r2(achFull)}%</div></div>
+      </div>
+      <div class="pb">
+        <span style="width:${Math.min(achMtd,100)}%;background:${achMtd>=90?'#16a34a':achMtd>=70?'#d97706':'#dc2626'}"></span>
+      </div>
+      <div class="d-flex justify-content-between mt-1" style="font-size:.63rem;color:#94a3b8">
+        <span>vs MTD TGT: <b style="color:#1e293b">${r2(achMtd)}%</b></span>
+        <span>MTD TGT: <b>${r2(r.mtTgt)}L</b></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Brand table ──
+let dashBrandsData = [];
+function renderDashBrands(brands) {
+  dashBrandsData = brands;
+  _renderDashBrandRows(brands);
+}
+
+function _renderDashBrandRows(brands) {
+  document.getElementById('dashBrandBody').innerHTML = brands.map((b, i) => `
+    <tr onclick="dashToggle(${i},this)" style="cursor:pointer" title="Click to expand portal detail">
+      <td><button class="exp-btn" id="dbtn_${i}"><i class="fas fa-chevron-right"></i></button></td>
+      <td><b>${b.brand}</b></td>
+      <td>
+        <div class="fw-semibold" style="font-size:.76rem">${b.brand}</div>
+        <div class="text-muted" style="font-size:.68rem">${b.resp}</div>
+      </td>
+      <td>${r2(b.tgt)}</td>
+      <td>${r2(b.mtTgt)}</td>
+      <td><b>${r2(b.cm)}</b>
+        <div class="pb"><span style="width:${Math.min(b.achFull,100)}%;background:${b.achFull>=90?'#16a34a':b.achFull>=70?'#d97706':'#dc2626'}"></span></div>
+      </td>
+      <td>${dashAchBadge(b.achFull)}</td>
+      <td>${dashAchBadge(b.achMtd)}</td>
+      <td>${r2(b.today)}</td>
+      <td>${r2(b.proj)}</td>
+      <td style="color:${b.drrc>=b.drrr?'#16a34a':'#dc2626'}">${r2(b.drrc)}</td>
+      <td>${r2(b.drrr)}</td>
+    </tr>
+    <tr id="dexp_${i}" style="display:none">
+      <td colspan="12" style="padding:0">
+        <table class="btbl sub-tbl w-100">
+          <thead>
+            <tr style="background:#dbeafe">
+              <th></th><th style="text-align:left">Portal</th>
+              <th>TGT (L)</th><th>MTD ACH (L)</th><th>ACH%</th><th>Today (L)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(b.portals || []).map(p => `
+              <tr>
+                <td></td>
+                <td>${dashPortalPill(p.p)}</td>
+                <td>${r2(p.tgt)}</td>
+                <td>${r2(p.cm)}</td>
+                <td>${dashAchBadge(p.ach)}</td>
+                <td>${r2(p.today)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </td>
+    </tr>`).join('');
+}
+
+function dashToggle(i) {
+  const exp = document.getElementById(`dexp_${i}`);
+  const btn = document.getElementById(`dbtn_${i}`).querySelector('i');
+  const open = exp.style.display === 'none';
+  exp.style.display = open ? 'table-row' : 'none';
+  btn.className = open ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+}
+
+function filterDashBrands(q) {
+  const lq = q.toLowerCase();
+  _renderDashBrandRows(dashBrandsData.filter(b =>
+    b.brand.toLowerCase().includes(lq) || b.resp.toLowerCase().includes(lq)
+  ));
+}
+
+// ── Portal table ──
+function renderDashPortals(portals) {
+  document.getElementById('dashPortalBody').innerHTML = portals.map(p => `
+    <tr>
+      <td>${dashPortalPill(p.portal)} <b>${p.portal}</b></td>
+      <td><b>${r2(p.cm)}</b></td>
+      <td>${r2(p.today)}</td>
+      <td><span class="ab ab-b">${p.brands}</span></td>
+    </tr>`).join('');
+}
+
+// ── Dashboard helpers ──
+function dashAchBadge(p) {
+  const v = r2(p);
+  const cls = v >= 90 ? 'ab-g' : v >= 70 ? 'ab-o' : 'ab-r';
+  return `<span class="ab ${cls}">${v}%</span>`;
+}
+
+function dashPortalPill(p) {
+  const mp = {
+    'Flipkart':'fk','Shopsy':'sh','Amazon 3P':'az','Amazon B2B':'az',
+    'Amazon UAE':'az','Amazon':'az','Meesho':'ms','Myntra':'mn',
+    'Zepto':'zt','Blinkit':'bl','Alpha':'oth','Jio Mart':'oth'
+  };
+  return `<span class="pp ${mp[p]||'oth'}">${p}</span>`;
+}
+
+function r2(v) {
+  if (v === undefined || v === null) return '0';
+  return Math.round(v * 100) / 100;
+}
+
+// ════════════════════════════════════════════════════════════
+// HELPERS (shared — unchanged)
 // ════════════════════════════════════════════════════════════
 const nv = v => {
   if (v === null || v === undefined || v === '') return 0;
@@ -827,10 +1604,8 @@ const nv = v => {
   return isNaN(x) ? 0 : x;
 };
 
-// Convert Lakhs → Rupees (integer)
 const toLakhs = v => Math.round(nv(v) * 100000);
 
-// Format as Indian number
 const fmt = n => {
   if (n === '' || n === null || n === undefined) return '';
   const num = Number(n);
