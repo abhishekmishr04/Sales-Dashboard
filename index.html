@@ -797,9 +797,9 @@ function buildTable(D, c1, c2, c3) {
   const portalEntries = Object.entries(D.portals)
     .filter(([pk]) => pk !== '')
     .map(([pk, p]) => {
-      const todayRs = toLakhs(p.dailySales[selDay - 1] || 0);
-      const mtdRs   = toLakhs(p.dailySales.slice(0, selDay).reduce((a, b) => a + b, 0));
-      const lmRs    = toLakhs(p.lm);
+      const todayRs = (p.dailySales[selDay - 1] || 0);
+      const mtdRs   = p.dailySales.slice(0, selDay).reduce((a, b) => a + b, 0);
+      const lmRs    = p.lm;
       return { pk, p, todayRs, mtdRs, lmRs };
     })
     .sort((a, b) => b.mtdRs - a.mtdRs);
@@ -881,11 +881,11 @@ function buildSummaryCards(D, c1, c2, c3) {
   const selDay = SELECTED_DAY;
   const todayRs = Object.values(D.portals)
     .filter(p => p.dailySales)
-    .reduce((s, p) => s + toLakhs(p.dailySales[selDay - 1] || 0), 0);
+    .reduce((s, p) => s + (p.dailySales[selDay - 1] || 0), 0);
   const mtdRs = Object.values(D.portals)
     .filter(p => p.dailySales)
-    .reduce((s, p) => s + toLakhs(p.dailySales.slice(0, selDay).reduce((a, b) => a + b, 0)), 0);
-  const lmRs = toLakhs(D.totals.lm);
+    .reduce((s, p) => s + p.dailySales.slice(0, selDay).reduce((a, b) => a + b, 0), 0);
+  const lmRs = D.totals.lm;
 
   document.getElementById('summaryCards').innerHTML = `
     <div class="rpt-sum-card">
