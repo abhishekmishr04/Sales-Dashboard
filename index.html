@@ -632,6 +632,16 @@ function handleFile(file) {
   };
   reader.readAsArrayBuffer(file);
 }
+function normalizeValue(v){
+  let num = Number(v) || 0;
+
+  // If value looks like lakhs (decimal small number)
+  if (num > 0 && num < 1000) {
+    return num * 100000;
+  }
+
+  return num;
+}
 
 // ════════════════════════════════════════════════════════════
 // PARSER
@@ -675,15 +685,15 @@ function parseWorkbook(wb) {
     const pk = String(portal || '').trim();
     const rk = String(resp).trim();
 
-    let lm = nv(row[C_LM]);
+    let lm = normalizeValue(row[C_LM]);
     if (lm === 0) { lm = nv(row[C_LM - 1]) || nv(row[C_LM + 1]); }
 
-    const tgt   = nv(row[C_TGT]);
-    const cm    = nv(row[C_CM]);
-    const mtTgt = nv(row[C_MTD_TGT]);
-    const stgt  = nv(row[C_STGT]);
+    const tgt   = normalizeValue(row[C_TGT]);
+    const cm    = normalizeValue(row[C_CM]);
+    const mtTgt = normalizeValue(row[C_MTD_TGT]);
+    const stgt  = normalizeValue(row[C_STGT]);
 
-    const dailySales = DAY_COLS.map((col) => (col < row.length) ? nv(row[col]) : 0);
+    const dailySales = DAY_COLS.map((col) => (col < row.length) ? normalizeValue(row[col]) : 0);
 
     RAW_ROWS.push({
       resp: rk, portal: pk, seller: sk,
@@ -818,7 +828,7 @@ function buildTable(D, c1, c2, c3) {
       </td>`;
     }
     const cls = type === 'lm' ? 'prev-s-cell' : 'sales-cell';
-    return `<td class="${cls}" id="${id}">${fmt(val)}</td>`;
+    return `<td class="${cls}" id="${id}">${(val).toLocaleString('en-IN')}</td>`;
   };
 
   const rows = portalEntries.map(({ pk, p, todayRs, mtdRs, lmRs }, i) => {
@@ -951,8 +961,19 @@ function recalcTotals() {
     const cellVal = id => {
       const el = document.getElementById(id);
       if (!el) return 0;
-      const raw = (el.tagName === 'INPUT' ? el.value : el.textContent).replace(/,/g,'').trim();
-      return raw && !isNaN(raw) ? parseFloat(raw) : 0;
+      const raw = (el.tagName === 'INPUT' ? el.value : el.textContent)
+      .replace(/,/g,'')
+      .replace('₹','')
+      .trim();
+
+let num = raw && !isNaN(raw) ? parseFloat(raw) : 0;
+
+// 🔥 IMPORTANT: if small number → treat as lakhs
+if (num > 0 && num < 1000) {
+  num = num * 100000;
+}
+
+return num;
     };
     todaySalesSum += cellVal(`ts_t1_${i}`);
     mtdSalesSum   += cellVal(`ts_t2_${i}`);
